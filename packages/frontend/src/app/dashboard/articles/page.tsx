@@ -1,0 +1,220 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { clsx } from 'clsx'
+
+interface Article {
+  id: string
+  title: string
+  excerpt: string
+  status: 'draft' | 'published' | 'scheduled'
+  isPaid: boolean
+  publishedAt?: string
+  views?: number
+  createdAt: string
+}
+
+const STATUS_LABELS: Record<Article['status'], string> = {
+  draft: 'Черновик',
+  published: 'Опубликована',
+  scheduled: 'Запланирована',
+}
+
+const STATUS_STYLES: Record<Article['status'], string> = {
+  draft: 'bg-gray-700 text-gray-300',
+  published: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  scheduled: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const PLACEHOLDER_ARTICLES: Article[] = [
+  {
+    id: '1',
+    title: 'Как я заработал первый миллион рублей на блоге',
+    excerpt: 'История о том, как обычный автор смог монетизировать свой контент...',
+    status: 'published',
+    isPaid: false,
+    publishedAt: '2026-04-20',
+    views: 1240,
+    createdAt: '2026-04-18',
+  },
+  {
+    id: '2',
+    title: 'Монетизация экспертного контента: полное руководство',
+    excerpt: 'Разбираем все инструменты и стратегии для превращения знаний в доход...',
+    status: 'published',
+    isPaid: true,
+    publishedAt: '2026-04-15',
+    views: 890,
+    createdAt: '2026-04-13',
+  },
+  {
+    id: '3',
+    title: 'Email-рассылки vs. социальные сети: что выбрать',
+    excerpt: 'Сравнительный анализ каналов дистрибуции контента для авторов...',
+    status: 'scheduled',
+    isPaid: false,
+    createdAt: '2026-04-21',
+  },
+  {
+    id: '4',
+    title: 'Как писать заголовки, которые читают',
+    excerpt: 'Практические техники создания цепляющих заголовков для статей...',
+    status: 'draft',
+    isPaid: false,
+    createdAt: '2026-04-22',
+  },
+]
+
+export default function ArticlesPage() {
+  const [filter, setFilter] = useState<'all' | Article['status']>('all')
+
+  const { data: articles = PLACEHOLDER_ARTICLES } = useQuery<Article[]>({
+    queryKey: ['articles'],
+    queryFn: () => api.get<Article[]>('/author/articles'),
+    placeholderData: PLACEHOLDER_ARTICLES,
+  })
+
+  const filtered =
+    filter === 'all' ? articles : articles.filter((a) => a.status === filter)
+
+  const counts = {
+    all: articles.length,
+    published: articles.filter((a) => a.status === 'published').length,
+    draft: articles.filter((a) => a.status === 'draft').length,
+    scheduled: articles.filter((a) => a.status === 'scheduled').length,
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-100">Статьи</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Управляйте своими публикациями
+          </p>
+        </div>
+        <Link href="/dashboard/editor">
+          <Button variant="primary">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Новая статья
+          </Button>
+        </Link>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 p-1 rounded-lg bg-gray-900 border border-gray-800 w-fit mb-6">
+        {([
+          ['all', 'Все'],
+          ['published', 'Опубликованные'],
+          ['draft', 'Черновики'],
+          ['scheduled', 'Запланированные'],
+        ] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={clsx(
+              'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+              filter === key
+                ? 'bg-indigo-500 text-white'
+                : 'text-gray-400 hover:text-gray-200'
+            )}
+          >
+            {label}{' '}
+            <span className="ml-1 text-xs opacity-70">{counts[key]}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Articles list */}
+      <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
+        {filtered.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-gray-500 mb-4">Статей пока нет</p>
+            <Link href="/dashboard/editor">
+              <Button variant="primary" size="sm">Написать первую статью</Button>
+            </Link>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-800">
+                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Статья</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Статус</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Дата</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Просмотры</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800">
+              {filtered.map((article) => (
+                <tr key={article.id} className="hover:bg-gray-800/50 transition-colors">
+                  <td className="px-5 py-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-200 line-clamp-1">
+                        {article.title}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                        {article.excerpt}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 sm:hidden">
+                      <span className={clsx('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', STATUS_STYLES[article.status])}>
+                        {STATUS_LABELS[article.status]}
+                      </span>
+                      <span className={clsx('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', article.isPaid ? 'bg-amber-500/10 text-amber-400' : 'bg-gray-700 text-gray-400')}>
+                        {article.isPaid ? 'Платная' : 'Бесплатная'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 hidden sm:table-cell">
+                    <div className="flex flex-col gap-1.5">
+                      <span className={clsx('inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium', STATUS_STYLES[article.status])}>
+                        {STATUS_LABELS[article.status]}
+                      </span>
+                      <span className={clsx('inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium', article.isPaid ? 'bg-amber-500/10 text-amber-400' : 'bg-gray-700 text-gray-400')}>
+                        {article.isPaid ? 'Платная' : 'Бесплатная'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 hidden md:table-cell">
+                    <span className="text-xs text-gray-500">
+                      {formatDate(article.publishedAt ?? article.createdAt)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 hidden lg:table-cell">
+                    <span className="text-xs text-gray-500">
+                      {article.views?.toLocaleString('ru-RU') ?? '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <Link
+                      href={`/dashboard/editor?id=${article.id}`}
+                      className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                    >
+                      Редактировать
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
