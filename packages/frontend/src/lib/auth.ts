@@ -26,7 +26,8 @@ interface RegisterPayload {
 }
 
 interface AuthResponse {
-  token: string
+  accessToken: string
+  refreshToken: string
   user: User
 }
 
@@ -66,10 +67,10 @@ export const useAuth = create<AuthState>()(
           const data = await api.post<AuthResponse>('/auth/login', payload, {
             skipAuth: true,
           })
-          setTokenCookie(data.token)
+          setTokenCookie(data.accessToken)
           set({
             user: data.user,
-            token: data.token,
+            token: data.accessToken,
             isAuthenticated: true,
             isLoading: false,
           })
@@ -87,10 +88,10 @@ export const useAuth = create<AuthState>()(
           const data = await api.post<AuthResponse>('/auth/register', payload, {
             skipAuth: true,
           })
-          setTokenCookie(data.token)
+          setTokenCookie(data.accessToken)
           set({
             user: data.user,
-            token: data.token,
+            token: data.accessToken,
             isAuthenticated: true,
             isLoading: false,
           })

@@ -54,12 +54,23 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email already registered' })
   async register(
     @Body() dto: RegisterDto,
-  ): Promise<{ message: string }> {
-    return this.authService.register({
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.register({
       email: dto.email,
       password: dto.password,
       name: dto.name,
     });
+
+    // Set tokens as httpOnly cookies (auto-login after registration)
+    res.cookie('access_token', result.accessToken, ACCESS_COOKIE_OPTIONS);
+    res.cookie('refresh_token', result.refreshToken, REFRESH_COOKIE_OPTIONS);
+
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      user: result.user,
+    };
   }
 
   @Public()
@@ -71,7 +82,7 @@ export class AuthController {
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ user: object; message: string }> {
+  ) {
     const result = await this.authService.login({
       email: dto.email,
       password: dto.password,
@@ -82,7 +93,8 @@ export class AuthController {
     res.cookie('refresh_token', result.refreshToken, REFRESH_COOKIE_OPTIONS);
 
     return {
-      message: 'Login successful',
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       user: result.user,
     };
   }
@@ -96,7 +108,7 @@ export class AuthController {
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ user: object; message: string }> {
+  ) {
     // Try cookie first, then body for backward-compat
     const tokenFromCookie = req.cookies?.refresh_token as string | undefined;
     const tokenFromBody = (req.body as { refreshToken?: string }).refreshToken;

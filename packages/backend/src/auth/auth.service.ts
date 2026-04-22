@@ -59,7 +59,7 @@ export class AuthService {
 
   // ─── Register ────────────────────────────────────────────────────────────────
 
-  async register(dto: RegisterDto): Promise<{ message: string }> {
+  async register(dto: RegisterDto): Promise<TokenPair & { user: UserProfile }> {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
@@ -71,17 +71,17 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const verificationToken = uuidv4();
 
-    let user: { id: string; email: string };
+    let user: { id: string; email: string; name: string; role: UserRole; avatar_url: string | null; email_verified: boolean };
     try {
       user = await this.prisma.user.create({
         data: {
           email: dto.email.toLowerCase(),
           password_hash: passwordHash,
           name: dto.name,
-          role: UserRole.reader,
+          role: UserRole.author,
           email_verified: false,
         },
-        select: { id: true, email: true },
+        select: { id: true, email: true, name: true, role: true, avatar_url: true, email_verified: true },
       });
     } catch (err) {
       this.logger.error('Failed to create user', err);
@@ -96,10 +96,20 @@ export class AuthService {
       this.logger.error('Failed to send verification email', err),
     );
 
-    this.logger.log(`User registered: ${user.email} (${user.id})`);
+    // Auto-login after registration
+    const tokens = await this.generateTokenPair(user.id, user.email, user.role);
+
+    this.logger.log(`User registered and logged in: ${user.email} (${user.id})`);
     return {
-      message:
-        'Registration successful. Please check your email to verify your account.',
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatar_url: user.avatar_url,
+        email_verified: user.email_verified,
+      },
     };
   }
 
