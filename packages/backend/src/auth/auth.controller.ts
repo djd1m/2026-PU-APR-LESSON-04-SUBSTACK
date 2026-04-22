@@ -16,44 +16,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength } from 'class-validator';
 import { Request, Response } from 'express';
-import { IS_PUBLIC_KEY } from './guards/jwt-auth.guard';
+import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
-import { SetMetadata } from '@nestjs/common';
-
-// ─── DTOs ─────────────────────────────────────────────────────────────────────
-
-export class RegisterRequestDto {
-  @IsEmail({}, { message: 'Please provide a valid email address' })
-  email!: string;
-
-  @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
-  password!: string;
-
-  @IsString()
-  @MinLength(2, { message: 'Name must be at least 2 characters' })
-  name!: string;
-}
-
-export class LoginRequestDto {
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  @MinLength(1)
-  password!: string;
-}
-
-export class RefreshRequestDto {
-  @IsString()
-  refreshToken!: string;
-}
-
-// Shorthand decorator for public routes
-const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+import { RegisterDto, LoginDto } from './dto';
 
 // Cookie config
 const ACCESS_COOKIE_OPTIONS = {
@@ -86,7 +53,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Registration successful' })
   @ApiResponse({ status: 409, description: 'Email already registered' })
   async register(
-    @Body() dto: RegisterRequestDto,
+    @Body() dto: RegisterDto,
   ): Promise<{ message: string }> {
     return this.authService.register({
       email: dto.email,
@@ -102,7 +69,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful, tokens set as httpOnly cookies' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
-    @Body() dto: LoginRequestDto,
+    @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ user: object; message: string }> {
     const result = await this.authService.login({
