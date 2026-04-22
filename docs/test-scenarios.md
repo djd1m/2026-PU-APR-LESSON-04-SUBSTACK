@@ -92,7 +92,7 @@ Scenario: Publish empty article
   And the article is not published
 
 Scenario: Publish with email service down
-  Given the email service (SendPulse) is unavailable
+  Given the email service (Resend) is unavailable
   When I publish an article
   Then the article is published on the web
   And emails are queued in Bull queue for retry
@@ -233,7 +233,7 @@ Scenario: Cross-tenant payment injection
 Scenario: Email delivered and opened
   Given article "Post 1" was published
   And email was sent to subscriber@example.com
-  When SendPulse reports delivery
+  When Resend reports delivery
   Then EmailDelivery status is "delivered"
   When the subscriber opens the email
   Then status updates to "opened"
@@ -246,14 +246,14 @@ Scenario: Email delivered and opened
 ```gherkin
 Scenario: Email bounce handling
   Given subscriber@invalid.com has bounced 2 times before
-  When the 3rd bounce webhook arrives from SendPulse
+  When the 3rd bounce webhook arrives from Resend
   Then the email is marked as invalid
   And future articles are not sent to this address
   And the author sees "1 невалидный email" in subscriber list
 
 Scenario: Spam complaint handling
   Given subscriber complains about email (marks as spam)
-  When SendPulse sends complaint webhook
+  When Resend sends complaint webhook
   Then the subscriber is auto-unsubscribed
   And the author is notified
   And the subscriber will not receive further emails

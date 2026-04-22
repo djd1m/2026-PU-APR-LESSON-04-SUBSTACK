@@ -185,7 +185,7 @@
 | G-005 | US-009 recommendations: no quality metric | Warning | Specification.md | Add "> 2% CTR target" |
 | G-006 | 54-ФЗ (онлайн-касса): unresolved open question | Warning | PRD.md Q-002 | Legal review needed |
 | G-007 | No C4 diagrams | Info | Architecture.md | Optional, mermaid covers high-level |
-| G-008 | No ADR for email ESP choice rationale | Info | Architecture.md | ADR-003 already covers SendPulse |
+| G-008 | No ADR for email ESP choice rationale | Info | Architecture.md | ADR-003 already covers Resend |
 
 **Blocked items:** 0
 **Warning items:** 6 (all addressable without restructuring)

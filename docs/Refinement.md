@@ -195,7 +195,7 @@ Feature: Email Delivery
 |-------------|-------|--------|
 | Redis caching | Publication pages (TTL 5 min) | Reduce DB reads 90%+ for popular pages |
 | CDN for static assets | Images, CSS, JS | Reduce server load, faster global delivery |
-| Email batch API | SendPulse batch (1000/request) | 100x fewer API calls |
+| Email batch API | Resend batch (1000/request) | 100x fewer API calls |
 | Lazy loading | Article images | Faster initial page load |
 | ISR (Incremental Static Regeneration) | Next.js for publication pages | Static-like speed with dynamic data |
 | gzip/brotli | Nginx compression | 60-80% smaller responses |

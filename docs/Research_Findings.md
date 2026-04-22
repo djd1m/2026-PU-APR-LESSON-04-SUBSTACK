@@ -116,7 +116,7 @@
 | Database | PostgreSQL | Проверенный выбор, JSONB для гибких схем |
 | Cache | Redis | Сессии, rate limiting, очереди |
 | Cloud | VPS в РФ (AdminVPS/HOSTKEY) | 152-ФЗ: данные на территории РФ |
-| Email | SendPulse / Unisender | Российские ESP, CIS-оптимизированы |
+| Email | Resend | Российские ESP, CIS-оптимизированы |
 | Payments | CloudPayments + СБП + YooKassa | Recurring подписки, Mir, SBP |
 | Search | Meilisearch / Elasticsearch | Поиск по контенту |
 | CDN | Yandex Cloud CDN | Российские edge-ноды |

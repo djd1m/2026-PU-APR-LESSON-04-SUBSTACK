@@ -239,7 +239,7 @@ Step 4: Pay
 | Зависимость | Провайдер | Риск | Митигация |
 |------------|----------|:----:|-----------|
 | Payment processing | CloudPayments | Medium | Fallback: YooKassa, СБП |
-| Email delivery | SendPulse / Unisender | Medium | Multi-provider setup |
+| Email delivery | Resend | Medium | Multi-provider setup |
 | Hosting (Russia) | AdminVPS / HOSTKEY | Low | Multi-provider |
 | CDN | Yandex Cloud CDN | Low | Fallback: собственный nginx cache |
 | AI (TTS, co-pilot) | Yandex SpeechKit / OpenAI API | Low | Деградация: feature недоступна |

@@ -45,7 +45,7 @@ graph TB
     CP[CloudPayments<br/>Recurring billing]
     SBP[СБП Gateway<br/>Fast payments]
     YK[YooKassa<br/>Fallback processor]
-    ESP[SendPulse / Unisender<br/>Email delivery]
+    ESP[Resend<br/>Email delivery]
     CDN[Yandex CDN<br/>Static assets]
     YANDEX[Yandex Webmaster<br/>SEO indexing]
   end
@@ -179,7 +179,7 @@ src/
 | **Cache/Queue** | Redis | 7 | Sessions, Bull queues, rate limiting |
 | **Queue Library** | Bull | 5 | Redis-backed, retries, priorities |
 | **Object Storage** | MinIO (self-hosted) | Latest | S3-compatible, images/files |
-| **Email ESP** | SendPulse | API v3 | Russian ESP, high deliverability |
+| **Email ESP** | Resend | API v3 | Russian ESP, high deliverability |
 | **Payments** | CloudPayments | API | Recurring subscriptions, Mir, SBP |
 | **Payments (backup)** | YooKassa | API v3 | Широкий охват методов |
 | **Reverse Proxy** | Nginx | 1.25 | SSL, rate limiting, caching |
@@ -219,11 +219,11 @@ src/
 - Need connection pooling (PgBouncer) at scale
 - Vertical scaling first, read replicas later
 
-### ADR-003: SendPulse over Amazon SES
+### ADR-003: Resend over Amazon SES
 
 **Status:** Accepted
 **Context:** Email delivery for Russian market
-**Decision:** SendPulse as primary ESP
+**Decision:** Resend as primary ESP
 **Rationale:**
 - Russian company, CIS-optimized deliverability
 - SMTP + API, transactional + marketing
@@ -376,7 +376,7 @@ Developer → git push → GitHub Actions:
 - Все на одном-двух VPS
 - PostgreSQL без реплик
 - Redis single instance
-- Email через ESP API (SendPulse)
+- Email через ESP API (Resend)
 
 ### Phase 2: Vertical Scaling (10K-100K users)
 

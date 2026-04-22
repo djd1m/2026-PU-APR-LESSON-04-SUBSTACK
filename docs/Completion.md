@@ -41,7 +41,7 @@
 - [ ] CloudPayments merchant account active, webhook URL configured
 - [ ] СБП gateway account active
 - [ ] YooKassa account active (fallback)
-- [ ] SendPulse account active, domain verified, SPF/DKIM/DMARC set
+- [ ] Resend account active, domain verified, SPF/DKIM/DMARC set
 - [ ] Email warm-up plan started (2 weeks before launch)
 - [ ] Yandex Webmaster account connected, sitemap submitted
 - [ ] Sentry project created, DSN configured
@@ -165,7 +165,7 @@ docker compose exec -T app npx prisma migrate deploy
 | API response time p99 | Prometheus | > 500ms for 5 min | Email |
 | API error rate (5xx) | Prometheus | > 1% for 5 min | Email |
 | Email queue depth | Bull dashboard | > 10,000 for 15 min | Email |
-| Email bounce rate | SendPulse webhook | > 5% daily | Email |
+| Email bounce rate | Resend webhook | > 5% daily | Email |
 | PostgreSQL connections | pg_stat_activity | > 80% of max | Email |
 | Disk usage | node_exporter | > 85% | Email |
 | CPU usage | node_exporter | > 90% for 10 min | Email |
@@ -260,7 +260,7 @@ docker compose exec -T app npx prisma migrate deploy
 ## 6. Launch Plan
 
 ### Week -2: Soft Launch Prep
-- [ ] Email warm-up in progress (SendPulse)
+- [ ] Email warm-up in progress (Resend)
 - [ ] Invite 5-10 beta authors (0% take rate)
 - [ ] Beta authors publish 2-3 articles each
 - [ ] Monitor deliverability, fix issues
