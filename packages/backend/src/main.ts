@@ -21,12 +21,16 @@ async function bootstrap(): Promise<void> {
 
   // ── CORS ─────────────────────────────────────────────────────────────────────
   app.enableCors({
-    origin: [
-      frontendUrl,
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://localhost:3010',
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      // In development, allow all origins
+      if (nodeEnv === 'development') return callback(null, true);
+      // In production, check whitelist
+      const whitelist = [frontendUrl, 'http://localhost:3011'];
+      if (whitelist.includes(origin)) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true, // allow cookies
