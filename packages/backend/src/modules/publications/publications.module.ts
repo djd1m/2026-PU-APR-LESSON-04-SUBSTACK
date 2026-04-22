@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
+import { PrismaModule } from '../../prisma/prisma.module';
+import { PublicationsController } from './publications.controller';
+import { PublicationsService } from './publications.service';
 
-/**
- * PublicationsModule — feature module for publications.
- * Full implementation will be scaffolded by the feature pipeline.
- */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [PrismaModule],
+  controllers: [PublicationsController],
+  providers: [PublicationsService],
+  exports: [PublicationsService],
 })
 export class PublicationsModule {}
