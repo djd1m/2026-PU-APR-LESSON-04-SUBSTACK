@@ -98,6 +98,8 @@ function formatDate(dateString: string) {
   })
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://substackru.com'
+
 export async function generateMetadata({
   params,
 }: {
@@ -110,15 +112,21 @@ export async function generateMetadata({
     return { title: 'Статья не найдена — SubStack RU' }
   }
 
+  const canonicalUrl = `${BASE_URL}/${slug}/${articleSlug}`
+
   return {
     title: `${article.title} — ${article.publicationName}`,
     description: article.excerpt,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: article.title,
       description: article.excerpt,
       type: 'article',
       publishedTime: article.publishedAt,
       authors: [article.authorName],
+      url: canonicalUrl,
     },
   }
 }
@@ -142,8 +150,37 @@ export default async function ArticlePage({
     ? article.content.slice(0, 600) + '...'
     : article.content
 
+  const canonicalUrl = `${BASE_URL}/${slug}/${articleSlug}`
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.excerpt,
+    datePublished: article.publishedAt,
+    dateModified: article.publishedAt,
+    author: {
+      '@type': 'Person',
+      name: article.authorName,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: article.publicationName,
+      url: `${BASE_URL}/${slug}`,
+    },
+    url: canonicalUrl,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">

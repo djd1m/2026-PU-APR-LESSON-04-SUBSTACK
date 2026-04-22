@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://substackru.com'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 import { ArticleCard, type ArticleCardProps } from '@/components/article/article-card'
@@ -68,13 +70,19 @@ export async function generateMetadata({
     return { title: 'Публикация не найдена — SubStack RU' }
   }
 
+  const canonicalUrl = `${BASE_URL}/${slug}`
+
   return {
     title: `${publication.name} — SubStack RU`,
     description: publication.description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title: publication.name,
       description: publication.description,
       type: 'website',
+      url: canonicalUrl,
     },
   }
 }
