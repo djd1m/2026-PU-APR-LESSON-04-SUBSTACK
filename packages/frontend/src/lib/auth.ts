@@ -37,6 +37,7 @@ interface AuthState {
   isLoading: boolean
   error: string | null
   isAuthenticated: boolean
+  _hasHydrated: boolean
   login: (payload: LoginPayload) => Promise<void>
   register: (payload: RegisterPayload) => Promise<void>
   logout: () => void
@@ -60,6 +61,7 @@ export const useAuth = create<AuthState>()(
       isLoading: false,
       error: null,
       isAuthenticated: false,
+      _hasHydrated: false,
 
       login: async (payload: LoginPayload) => {
         set({ isLoading: true, error: null })
@@ -119,6 +121,11 @@ export const useAuth = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state._hasHydrated = true
+        }
+      },
     }
   )
 )

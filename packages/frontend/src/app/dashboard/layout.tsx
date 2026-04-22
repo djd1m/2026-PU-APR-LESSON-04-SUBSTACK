@@ -63,15 +63,17 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, _hasHydrated, user, logout } = useAuth()
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Wait for Zustand to hydrate from localStorage before checking auth
+    if (_hasHydrated && !isAuthenticated) {
       router.replace('/auth/login')
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, _hasHydrated, router])
 
-  if (!isAuthenticated) {
+  // Show loading while hydrating or not authenticated yet
+  if (!_hasHydrated || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="animate-spin h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent" />
