@@ -311,7 +311,47 @@
 
 ---
 
-## 6. КЛЮЧЕВЫЕ ГИПОТЕЗЫ [H]
+## 6. CJM: 3 ВАРИАНТА CUSTOMER JOURNEY MAP
+
+> Интерактивный прототип: [docs/cjm-prototype.html](cjm-prototype.html)
+
+### Variant Table
+
+| | A: Writer-First | B: Knowledge Hub | C: Creator Studio |
+|---|---|---|---|
+| **Сегмент** | Журналисты, блогеры | Эксперты, преподаватели | Подкастеры, мультимедиа |
+| **Aha Moment** | Первый платный подписчик (цель: <30 дней) | Первая дискуссия в member-сообществе | Авто-аудиоверсия + первый донат |
+| **Entry Hook** | "Публикуй и зарабатывай без посредников" | "Стань авторитетом в своей нише" | "Твоя аудитория — твоё сообщество" |
+| **Paywall** | Сразу после Aha (эмоция первого дохода) | После proof-of-value (читатель прошёл модуль) | После привычки (7-дневный reading streak) |
+| **Core Loop** | Реферальная программа + Yandex SEO | Геймификация + опросы + бандл-пасс | TTS + микро-типпинг + Quick Posts |
+| **Invite** | Tiered referral: 1→статья, 5→месяц free | Bundle Pass: 3–5 авторов = 1 подписка | Донат → авто-share → viral loop |
+| **Микротренды** | #2 Fast monetization, #5 Referrals, #15 Owned audience | #3 Membership, #4 Bundling, #8 Gamification | #6 Audio TTS, #7 Micro-tipping, #11 Quick Posts |
+| **Гипотеза** | Быстрый первый доход удерживает авторов | Сообщество важнее контента для retention | Мультиформат снижает churn |
+| **Риск** | Долгий путь без discovery-сети | Сложный онбординг отпугнёт | Расфокус: слишком много форматов |
+
+### Интегрированные микротренды 2025–2026 (15 трендов)
+
+| # | Тренд | Источник | Фича для продукта |
+|---|-------|---------|-------------------|
+| 1 | AI-персонализация доставки | [Research and Markets](https://www.researchandmarkets.com/reports/6177340/artificial-intelligence-generated-personalized) | Per-subscriber send-time optimization |
+| 2 | Быстрая монетизация (66 дней) | [beehiiv State of Newsletters 2026](https://www.beehiiv.com/blog/the-state-of-newsletters-2026) | Onboarding funnel с milestone nudges |
+| 3 | Membership > Подписка | [Readless Subscription Fatigue 2026](https://www.readless.app/blog/subscription-fatigue-statistics-2026) | Membership Hub с уровнями и перками |
+| 4 | Bundle Pass | [Bango Bundling Trends 2026](https://bango.com/whats-in-store-for-2026-top-bundling-and-subscription-trends-to-watch/) | 3–8 авторов = 1 подписка |
+| 5 | Tiered реферальные программы | [Viral Loops Best Practices 2025](https://viral-loops.com/blog/referral-program-best-practices-in-2025/) | Встроенный referral builder |
+| 6 | Audio TTS | [Pugpig Publisher Research 2026](https://www.pugpig.com/2026/03/04/text-to-speech-publisher-apps/) | Авто-озвучка каждой статьи |
+| 7 | Микро-типпинг | [Creator Tipping Market 2026](https://www.researchandmarkets.com/reports/6215236/creator-tipping-platforms-market-report) | "Поддержать автора" 50/150/500 ₽ |
+| 8 | Геймификация (streaks) | [AmplifAI Gamification Stats](https://www.amplifai.com/blog/gamification-statistics) | Reading Streaks + Weekly Challenges |
+| 9 | Встроенные сообщества | [Community-Led Growth 2026](https://www.framemakerzzz.com/community-led-growth-beyond-followers-2026/) | Нативные комментарии + member chat |
+| 10 | AI co-pilot для авторов | [Selling Signals Newsletter Trends](https://sellingsignals.com/newsletter-growth-trends/) | AI-помощник: заголовки, вступления |
+| 11 | Quick Posts (short-form) | [WriteBuildScale Substack Trends](https://writebuildscale.substack.com/p/10-trends-that-will-shape-substack) | 300-символьные обновления между выпусками |
+| 12 | Магазин цифровых продуктов | [SoloPass Alternatives 2026](https://solopass.co/blog/substack-alternatives-2026/) | PDF, шаблоны, разовые статьи |
+| 13 | Дзен Premium gap | [VK Q2 2025 Press Release](https://www.marketscreener.com/news/vk-q2-and-h1-2025-press-release-ce7c51dbdb8df524) | Undercut fee, email-first positioning |
+| 14 | Zero-party data опросы | [Mailjet Email Trends 2026](https://www.mailjet.com/blog/email-best-practices/email-marketing-trends-2026/) | Preference polls + авто-сегментация |
+| 15 | Owned audience = moat | [Digital Collective Creator Economy 2026](https://digitalcollective.media/p/the-creator-economy-in-2026-20-trends) | One-click CSV экспорт, zero lock-in |
+
+---
+
+## 7. КЛЮЧЕВЫЕ ГИПОТЕЗЫ [H]
 
 1. [H] Break-even при ~18,500 платящих (lean, 600K ₽/мес burn)
 2. [H] Membership + gamification (reading streaks) снижает monthly churn до 4–5% vs 5.8% у Substack
