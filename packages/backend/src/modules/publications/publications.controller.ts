@@ -50,6 +50,15 @@ export class PublicationsController {
   }
 
   /**
+   * GET /api/publications/my
+   * List publications owned by the authenticated author.
+   */
+  @Get('my')
+  findMy(@Request() req: AuthRequest) {
+    return this.publicationsService.findByAuthorId(req.user.id);
+  }
+
+  /**
    * GET /api/publications/:slug
    * Fetch a publication by its slug. Public — no auth required.
    */
