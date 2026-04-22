@@ -1,0 +1,166 @@
+{
+  "version": "1.0",
+  "project": "substack-ru",
+  "current_sprint": "MVP",
+  "last_updated": "2026-04-22",
+  "features": [
+    {
+      "id": "auth-registration",
+      "name": "Authentication & Registration",
+      "description": "Writer and subscriber signup, email verification, JWT auth, password reset",
+      "status": "next",
+      "priority": "must",
+      "depends_on": [],
+      "moscow": "Must",
+      "notes": "Foundation for all user-facing features. No depends_on — start here."
+    },
+    {
+      "id": "publication-setup",
+      "name": "Publication Setup",
+      "description": "Writer creates publication profile: name, description, cover image, custom slug",
+      "status": "next",
+      "priority": "must",
+      "depends_on": [],
+      "moscow": "Must",
+      "notes": "Independent of auth at setup, but auth required to save. Can be parallelized."
+    },
+    {
+      "id": "article-editor",
+      "name": "Article Editor",
+      "description": "Rich text editor for writing articles, image upload, draft saving, preview",
+      "status": "next",
+      "priority": "must",
+      "depends_on": [],
+      "moscow": "Must",
+      "notes": "Core content creation flow. Blocks email-delivery and yandex-seo."
+    },
+    {
+      "id": "email-delivery",
+      "name": "Email Delivery to Subscribers",
+      "description": "Send published articles to subscriber list via Resend API, HTML email templates",
+      "status": "planned",
+      "priority": "must",
+      "depends_on": ["article-editor"],
+      "moscow": "Must",
+      "notes": "Requires article-editor to exist. Uses Resend + BullMQ queue."
+    },
+    {
+      "id": "paid-subscriptions",
+      "name": "Paid Subscriptions",
+      "description": "Subscription tiers, payment processing (CloudPayments + SBP + YooKassa), access control",
+      "status": "planned",
+      "priority": "must",
+      "depends_on": ["auth-registration"],
+      "moscow": "Must",
+      "notes": "Core monetization. HMAC webhook verification critical. 152-FZ: payment data stays in Russia."
+    },
+    {
+      "id": "author-analytics",
+      "name": "Author Analytics Dashboard",
+      "description": "Open rates, subscriber growth, revenue metrics, article performance",
+      "status": "planned",
+      "priority": "must",
+      "depends_on": ["email-delivery"],
+      "moscow": "Must",
+      "notes": "Needs email delivery tracking to be meaningful."
+    },
+    {
+      "id": "yandex-seo",
+      "name": "Yandex SEO Optimization",
+      "description": "Meta tags, structured data (JSON-LD), XML sitemap, Yandex.Webmaster verification",
+      "status": "planned",
+      "priority": "must",
+      "depends_on": ["article-editor"],
+      "moscow": "Must",
+      "notes": "Russian-specific SEO. Next.js Server Components make this straightforward."
+    },
+    {
+      "id": "csv-export",
+      "name": "Subscriber CSV Export",
+      "description": "Writer exports their subscriber list as CSV for backup and migration",
+      "status": "planned",
+      "priority": "must",
+      "depends_on": ["auth-registration"],
+      "moscow": "Must",
+      "notes": "Simple but important for writer trust. Must include 152-FZ consent audit trail."
+    },
+    {
+      "id": "author-payouts",
+      "name": "Author Payout System",
+      "description": "Writers withdraw earnings to Russian bank accounts, payout history, tax documents",
+      "status": "planned",
+      "priority": "must",
+      "depends_on": ["paid-subscriptions"],
+      "moscow": "Must",
+      "notes": "Requires paid-subscriptions to have revenue. Bank transfer integration required."
+    },
+    {
+      "id": "recommendation-engine",
+      "name": "Recommendation Engine",
+      "description": "Suggest publications to subscribers based on reading history and similar publications",
+      "status": "planned",
+      "priority": "should",
+      "depends_on": ["paid-subscriptions"],
+      "moscow": "Should",
+      "notes": "Growth feature. Simple collaborative filtering at MVP stage."
+    },
+    {
+      "id": "referral-program",
+      "name": "Referral Program",
+      "description": "Writers share referral links, earn rewards when referred readers subscribe",
+      "status": "planned",
+      "priority": "should",
+      "depends_on": ["recommendation-engine"],
+      "moscow": "Should",
+      "notes": "Growth loop. Depends on recommendation-engine for tracking context."
+    },
+    {
+      "id": "ai-copilot",
+      "name": "AI Writing Copilot",
+      "description": "AI-assisted writing: headline suggestions, grammar, SEO tips, content ideas",
+      "status": "planned",
+      "priority": "should",
+      "depends_on": [],
+      "moscow": "Should",
+      "notes": "Uses MCP server + Claude API. 152-FZ: content processing — review data flow."
+    },
+    {
+      "id": "micro-tipping",
+      "name": "Micro-Tipping",
+      "description": "Readers send one-time tips to writers per article (50–500 RUB range)",
+      "status": "planned",
+      "priority": "should",
+      "depends_on": ["paid-subscriptions"],
+      "moscow": "Should",
+      "notes": "Reuses payment integration from paid-subscriptions. Lower complexity."
+    },
+    {
+      "id": "admin-panel",
+      "name": "Admin Panel",
+      "description": "Platform admin: user management, fraud detection, payout control, content moderation",
+      "status": "planned",
+      "priority": "should",
+      "depends_on": [],
+      "moscow": "Should",
+      "notes": "Internal tool. Can be basic at MVP — key operations: block user, freeze payout."
+    }
+  ],
+  "sprint_goals": {
+    "MVP": [
+      "Complete Writer-First CJM: register → write → publish → get paid",
+      "Russian payment providers integrated and tested",
+      "152-FZ compliance verified",
+      "Yandex SEO live for all public pages"
+    ]
+  },
+  "revenue_path": [
+    "auth-registration",
+    "paid-subscriptions",
+    "author-payouts"
+  ],
+  "content_path": [
+    "article-editor",
+    "email-delivery",
+    "author-analytics"
+  ]
+}
