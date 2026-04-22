@@ -1,0 +1,308 @@
+// Prisma schema for SubStack RU
+// Generator: Prisma Client 6, PostgreSQL provider
+// Date: 2026-04-22
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  reader
+  author
+  admin
+}
+
+enum ArticleVisibility {
+  free
+  paid
+}
+
+enum ArticleStatus {
+  draft
+  scheduled
+  published
+}
+
+enum SubscriptionType {
+  free
+  paid
+}
+
+enum SubscriptionStatus {
+  active
+  cancelled
+  expired
+  grace_period
+  pending
+}
+
+enum PaymentProcessor {
+  cloudpayments
+  sbp
+  yookassa
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  refunded
+}
+
+enum PayoutStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum EmailDeliveryStatus {
+  queued
+  sent
+  delivered
+  opened
+  clicked
+  bounced
+  complained
+}
+
+enum TipStatus {
+  pending
+  completed
+  failed
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String    @unique
+  password_hash  String
+  role           UserRole  @default(reader)
+  name           String
+  avatar_url     String?
+  email_verified Boolean   @default(false)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  // Relations
+  publications   Publication[]
+  subscriptions  Subscription[]  @relation("SubscriberSubscriptions")
+  referrals_sent Referral[]      @relation("ReferrerReferrals")
+  referrals_recv Referral[]      @relation("ReferredReferrals")
+  payouts        Payout[]
+  tips_sent      Tip[]           @relation("TipsSent")
+  email_deliveries EmailDelivery[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Publication {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  author_id           String   @db.Uuid
+  name                String
+  slug                String   @unique
+  description         String   @db.Text
+  avatar_url          String?
+  custom_domain       String?
+  paid_enabled        Boolean  @default(false)
+  paid_price_monthly  Int      @default(0)
+  paid_price_yearly   Int?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  // Relations
+  author              User             @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  articles            Article[]
+  subscriptions       Subscription[]
+  recommendations_from Recommendation[] @relation("RecommendationFrom")
+  recommendations_to   Recommendation[] @relation("RecommendationTo")
+  referrals           Referral[]
+  tips_received       Tip[]
+
+  @@index([slug])
+  @@index([author_id])
+  @@map("publications")
+}
+
+model Article {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publication_id   String            @db.Uuid
+  title            String
+  slug             String
+  content_markdown String            @db.Text
+  content_html     String            @db.Text
+  excerpt          String?           @db.Text
+  cover_image_url  String?
+  visibility       ArticleVisibility @default(free)
+  status           ArticleStatus     @default(draft)
+  scheduled_at     DateTime?
+  published_at     DateTime?
+  email_sent       Boolean           @default(false)
+  seo_title        String?
+  seo_description  String?
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+
+  // Relations
+  publication      Publication     @relation(fields: [publication_id], references: [id], onDelete: Cascade)
+  email_deliveries EmailDelivery[]
+  tips             Tip[]
+
+  @@unique([publication_id, slug])
+  @@index([publication_id, published_at(sort: Desc)])
+  @@index([publication_id, slug])
+  @@map("articles")
+}
+
+model Subscription {
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriber_id  String             @db.Uuid
+  publication_id String             @db.Uuid
+  type           SubscriptionType   @default(free)
+  status         SubscriptionStatus @default(active)
+  payment_id     String?
+  started_at     DateTime           @default(now())
+  expires_at     DateTime?
+  cancelled_at   DateTime?
+  created_at     DateTime           @default(now())
+
+  // Relations
+  subscriber     User        @relation("SubscriberSubscriptions", fields: [subscriber_id], references: [id], onDelete: Cascade)
+  publication    Publication @relation(fields: [publication_id], references: [id], onDelete: Cascade)
+  payments       Payment[]
+
+  // Unique: one active/grace_period subscription per user per publication
+  // (enforced at application level for partial-index behavior)
+  @@index([publication_id, type])
+  @@index([subscriber_id])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscription_id String           @db.Uuid
+  amount          Int
+  currency        String           @default("RUB")
+  platform_fee    Int
+  processor_fee   Int
+  author_payout   Int
+  processor       PaymentProcessor
+  processor_tx_id String
+  status          PaymentStatus    @default(pending)
+  paid_at         DateTime?
+  created_at      DateTime         @default(now())
+
+  // Relations
+  subscription    Subscription @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+
+  @@index([subscription_id])
+  @@index([processor_tx_id])
+  @@map("payments")
+}
+
+model Payout {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  author_id    String       @db.Uuid
+  amount       Int
+  status       PayoutStatus @default(pending)
+  bank_account String
+  period_start DateTime     @db.Date
+  period_end   DateTime     @db.Date
+  created_at   DateTime     @default(now())
+  completed_at DateTime?
+
+  // Relations
+  author       User @relation(fields: [author_id], references: [id], onDelete: Cascade)
+
+  @@index([author_id])
+  @@index([status])
+  @@map("payouts")
+}
+
+model EmailDelivery {
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  article_id    String              @db.Uuid
+  subscriber_id String              @db.Uuid
+  status        EmailDeliveryStatus @default(queued)
+  sent_at       DateTime?
+  opened_at     DateTime?
+  clicked_at    DateTime?
+  created_at    DateTime            @default(now())
+
+  // Relations
+  article       Article @relation(fields: [article_id], references: [id], onDelete: Cascade)
+  subscriber    User    @relation(fields: [subscriber_id], references: [id], onDelete: Cascade)
+
+  @@index([article_id, status])
+  @@index([subscriber_id])
+  @@map("email_deliveries")
+}
+
+model Recommendation {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  from_publication_id String   @db.Uuid
+  to_publication_id   String   @db.Uuid
+  created_at          DateTime @default(now())
+
+  // Relations
+  from_publication    Publication @relation("RecommendationFrom", fields: [from_publication_id], references: [id], onDelete: Cascade)
+  to_publication      Publication @relation("RecommendationTo", fields: [to_publication_id], references: [id], onDelete: Cascade)
+
+  @@unique([from_publication_id, to_publication_id])
+  @@index([from_publication_id])
+  @@index([to_publication_id])
+  @@map("recommendations")
+}
+
+model Referral {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  referrer_id      String   @db.Uuid
+  referred_id      String   @db.Uuid
+  publication_id   String   @db.Uuid
+  milestone_reached Int     @default(0)
+  reward_granted   Boolean  @default(false)
+  created_at       DateTime @default(now())
+
+  // Relations
+  referrer         User        @relation("ReferrerReferrals", fields: [referrer_id], references: [id], onDelete: Cascade)
+  referred         User        @relation("ReferredReferrals", fields: [referred_id], references: [id], onDelete: Cascade)
+  publication      Publication @relation(fields: [publication_id], references: [id], onDelete: Cascade)
+
+  @@unique([referrer_id, referred_id, publication_id])
+  @@index([referrer_id])
+  @@index([publication_id])
+  @@map("referrals")
+}
+
+model Tip {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  from_user_id    String           @db.Uuid
+  to_publication_id String         @db.Uuid
+  article_id      String?          @db.Uuid
+  amount          Int
+  platform_fee    Int
+  processor       PaymentProcessor
+  processor_tx_id String
+  status          TipStatus        @default(pending)
+  created_at      DateTime         @default(now())
+
+  // Relations
+  from_user       User        @relation("TipsSent", fields: [from_user_id], references: [id], onDelete: Cascade)
+  to_publication  Publication @relation(fields: [to_publication_id], references: [id], onDelete: Cascade)
+  article         Article?    @relation(fields: [article_id], references: [id], onDelete: SetNull)
+
+  @@index([from_user_id])
+  @@index([to_publication_id])
+  @@index([processor_tx_id])
+  @@map("tips")
+}
+
