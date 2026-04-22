@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CJM Prototype — Substack Clone (Russia)</title>
+<style>
+  :root {
+    --bg: #0f0f14;
+    --surface: #1a1a24;
+    --surface2: #232333;
+    --border: #2e2e42;
+    --text: #e8e8f0;
+    --text2: #9494b0;
+    --accent-a: #6366f1;
+    --accent-a-bg: #6366f120;
+    --accent-b: #10b981;
+    --accent-b-bg: #10b98120;
+    --accent-c: #f59e0b;
+    --accent-c-bg: #f59e0b20;
+    --danger: #ef4444;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  .header { text-align: center; padding: 40px 20px 30px; }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .header p { color: var(--text2); font-size: 15px; max-width: 600px; margin: 0 auto; }
+  .header .badge { display: inline-block; background: var(--accent-a-bg); color: var(--accent-a); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+
+  /* Variant Tabs */
+  .tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+  .tab { padding: 10px 24px; border-radius: 30px; border: 2px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-size: 14px; font-weight: 600; transition: all .2s; }
+  .tab:hover { border-color: var(--text2); color: var(--text); }
+  .tab.active-a { border-color: var(--accent-a); background: var(--accent-a-bg); color: var(--accent-a); }
+  .tab.active-b { border-color: var(--accent-b); background: var(--accent-b-bg); color: var(--accent-b); }
+  .tab.active-c { border-color: var(--accent-c); background: var(--accent-c-bg); color: var(--accent-c); }
+
+  /* Controls */
+  .controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .ctrl-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text2); cursor: pointer; font-size: 13px; transition: all .2s; }
+  .ctrl-btn:hover { background: var(--surface2); color: var(--text); }
+  .ctrl-btn.active { background: var(--accent-a); color: white; border-color: var(--accent-a); }
+
+  /* Screen Cards */
+  .screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 40px; }
+  .screen { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: transform .2s, box-shadow .2s; }
+  .screen:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+  .screen-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .screen-num { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .screen-stage { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+  .screen-body { padding: 24px 20px; min-height: 260px; }
+  .screen-body h3 { font-size: 18px; margin-bottom: 12px; font-weight: 700; }
+  .screen-body p { color: var(--text2); font-size: 14px; margin-bottom: 10px; }
+  .screen-body .mock-btn { display: inline-block; padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; margin-top: 12px; }
+  .screen-body ul { list-style: none; padding: 0; }
+  .screen-body ul li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text2); }
+  .screen-body ul li:last-child { border: none; }
+  .screen-body ul li::before { content: '→ '; color: var(--text2); }
+  .screen-body .metric { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+  .screen-body .metric span:first-child { color: var(--text2); }
+  .screen-body .metric span:last-child { font-weight: 600; }
+
+  /* CJM Overlay Badge */
+  .cjm-badge { display: none; margin-top: 16px; padding: 12px 16px; border-radius: var(--radius-sm); border: 1px dashed; font-size: 12px; }
+  .cjm-badge.visible { display: block; }
+  .cjm-badge .cjm-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .cjm-badge .cjm-q { color: var(--text2); font-style: italic; }
+
+  /* Color variants */
+  .variant-a .screen-num, .variant-a .screen-stage { color: var(--accent-a); }
+  .variant-a .screen-stage { background: var(--accent-a-bg); }
+  .variant-a .mock-btn { background: var(--accent-a); color: white; }
+  .variant-a .cjm-badge { border-color: var(--accent-a); background: var(--accent-a-bg); color: var(--accent-a); }
+
+  .variant-b .screen-num, .variant-b .screen-stage { color: var(--accent-b); }
+  .variant-b .screen-stage { background: var(--accent-b-bg); }
+  .variant-b .mock-btn { background: var(--accent-b); color: white; }
+  .variant-b .cjm-badge { border-color: var(--accent-b); background: var(--accent-b-bg); color: var(--accent-b); }
+
+  .variant-c .screen-num, .variant-c .screen-stage { color: var(--accent-c); }
+  .variant-c .screen-stage { background: var(--accent-c-bg); }
+  .variant-c .mock-btn { background: var(--accent-c); color: #000; }
+  .variant-c .cjm-badge { border-color: var(--accent-c); background: var(--accent-c-bg); color: var(--accent-c); }
+
+  /* Compare Table */
+  .compare-section { display: none; margin-bottom: 40px; }
+  .compare-section.visible { display: block; }
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .compare-table th { padding: 12px 16px; text-align: left; border-bottom: 2px solid var(--border); color: var(--text2); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .compare-table td { padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .compare-table tr:hover td { background: var(--surface2); }
+  .compare-table .col-a { color: var(--accent-a); }
+  .compare-table .col-b { color: var(--accent-b); }
+  .compare-table .col-c { color: var(--accent-c); }
+
+  /* Builder */
+  .builder-section { display: none; margin-bottom: 40px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .builder-section.visible { display: block; }
+  .builder-section h2 { font-size: 20px; margin-bottom: 16px; }
+  .builder-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+  .builder-row .label { width: 120px; font-size: 13px; color: var(--text2); flex-shrink: 0; }
+  .builder-opt { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; font-size: 12px; transition: all .2s; }
+  .builder-opt:hover { border-color: var(--text); color: var(--text); }
+  .builder-opt.sel-a { border-color: var(--accent-a); background: var(--accent-a-bg); color: var(--accent-a); }
+  .builder-opt.sel-b { border-color: var(--accent-b); background: var(--accent-b-bg); color: var(--accent-b); }
+  .builder-opt.sel-c { border-color: var(--accent-c); background: var(--accent-c-bg); color: var(--accent-c); }
+
+  /* Scoring */
+  .scoring-section { display: none; margin-bottom: 40px; }
+  .scoring-section.visible { display: block; }
+  .score-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .score-card h3 { font-size: 16px; margin-bottom: 12px; }
+  .score-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .score-row:last-child { border: none; }
+  .score-row .criterion { font-size: 13px; color: var(--text2); }
+  .score-stars { display: flex; gap: 4px; }
+  .star { width: 20px; height: 20px; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all .15s; }
+  .star.filled { color: white; }
+  .score-total { text-align: center; font-size: 24px; font-weight: 700; margin-top: 12px; padding-top: 12px; border-top: 2px solid var(--border); }
+
+  /* Lock */
+  .lock-section { text-align: center; padding: 30px; margin-bottom: 40px; }
+  .lock-btn { padding: 14px 40px; border-radius: 30px; border: 2px solid var(--accent-a); background: transparent; color: var(--accent-a); cursor: pointer; font-size: 16px; font-weight: 700; transition: all .2s; }
+  .lock-btn:hover { background: var(--accent-a); color: white; }
+  .lock-btn.locked { background: var(--accent-b); border-color: var(--accent-b); color: white; cursor: default; }
+  .locked-msg { display: none; margin-top: 16px; padding: 20px; background: var(--accent-b-bg); border: 1px solid var(--accent-b); border-radius: var(--radius); }
+  .locked-msg.visible { display: block; }
+
+  /* Trends */
+  .trends-section { margin-bottom: 40px; }
+  .trends-section h2 { font-size: 20px; margin-bottom: 16px; text-align: center; }
+  .trend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .trend-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; }
+  .trend-card .trend-num { font-size: 11px; font-weight: 700; color: var(--text2); margin-bottom: 4px; }
+  .trend-card h4 { font-size: 14px; margin-bottom: 6px; }
+  .trend-card p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .trend-card a { color: var(--accent-a); text-decoration: none; font-size: 11px; }
+  .trend-card a:hover { text-decoration: underline; }
+  .trend-card .trend-feature { margin-top: 8px; padding: 6px 10px; background: var(--surface2); border-radius: 6px; font-size: 11px; color: var(--text); }
+
+  /* Sources */
+  .sources { margin-top: 40px; padding: 24px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+  .sources h3 { font-size: 14px; margin-bottom: 12px; color: var(--text2); }
+  .sources a { color: var(--accent-a); text-decoration: none; font-size: 12px; display: block; padding: 3px 0; word-break: break-all; }
+  .sources a:hover { text-decoration: underline; }
+
+  @media (max-width: 768px) {
+    .screens { grid-template-columns: 1fr; }
+    .container { padding: 12px; }
+    .header h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">MODULE 2.5 — CJM PROTOTYPE</div>
+    <h1>Customer Journey Map: Substack Clone (Russia)</h1>
+    <p>3 варианта CJM с разными гипотезами Aha Moment, Entry Hook и Paywall. Интегрированы микротренды creator economy 2025–2026.</p>
+  </div>
+
+  <!-- Variant Tabs -->
+  <div class="tabs">
+    <button class="tab active-a" onclick="switchVariant('a')" id="tab-a">A: Writer-First</button>
+    <button class="tab" onclick="switchVariant('b')" id="tab-b">B: Knowledge Hub</button>
+    <button class="tab" onclick="switchVariant('c')" id="tab-c">C: Creator Studio</button>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="ctrl-btn" onclick="toggleCJM()" id="btn-cjm">📊 CJM Overlay</button>
+    <button class="ctrl-btn" onclick="toggleCompare()" id="btn-compare">⚖️ Сравнение</button>
+    <button class="ctrl-btn" onclick="toggleBuilder()" id="btn-builder">🔧 Конфигуратор</button>
+    <button class="ctrl-btn" onclick="toggleScoring()" id="btn-scoring">🏆 Оценка</button>
+  </div>
+
+  <!-- ========== SCREENS ========== -->
+  <div class="screens" id="screens-container">
+    <!-- Filled by JS -->
+  </div>
+
+  <!-- ========== COMPARE TABLE ========== -->
+  <div class="compare-section" id="compare-section">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Параметр</th>
+          <th class="col-a">A: Writer-First</th>
+          <th class="col-b">B: Knowledge Hub</th>
+          <th class="col-c">C: Creator Studio</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Целевой сегмент</td>
+          <td class="col-a">Журналисты, блогеры</td>
+          <td class="col-b">Эксперты, преподаватели</td>
+          <td class="col-c">Подкастеры, мультимедиа</td>
+        </tr>
+        <tr>
+          <td>Aha Moment</td>
+          <td class="col-a">Первый платный подписчик</td>
+          <td class="col-b">Первая дискуссия в member-чате</td>
+          <td class="col-c">Авто-аудиоверсия + первый донат</td>
+        </tr>
+        <tr>
+          <td>Entry Hook</td>
+          <td class="col-a">"Публикуй и зарабатывай без посредников"</td>
+          <td class="col-b">"Стань авторитетом в своей нише"</td>
+          <td class="col-c">"Твоя аудитория — твоё сообщество"</td>
+        </tr>
+        <tr>
+          <td>Paywall Timing</td>
+          <td class="col-a">Сразу после Aha (эмоция первого дохода)</td>
+          <td class="col-b">После proof-of-value (читатель прошёл модуль)</td>
+          <td class="col-c">После привычки (7-дневный reading streak)</td>
+        </tr>
+        <tr>
+          <td>Core Loop</td>
+          <td class="col-a">Реферальная программа + Yandex SEO</td>
+          <td class="col-b">Геймификация + опросы + бандл-пасс</td>
+          <td class="col-c">TTS + микро-типпинг + Quick Posts</td>
+        </tr>
+        <tr>
+          <td>Invite Mechanic</td>
+          <td class="col-a">Tiered referral: 1→статья, 5→месяц free</td>
+          <td class="col-b">Bundle Pass: 3–5 авторов = 1 подписка</td>
+          <td class="col-c">"Поддержи автора" → share → viral loop</td>
+        </tr>
+        <tr>
+          <td>Микротренды</td>
+          <td class="col-a">#2 Fast monetization, #5 Referrals, #15 Owned audience</td>
+          <td class="col-b">#3 Membership, #4 Bundling, #8 Gamification, #14 Surveys</td>
+          <td class="col-c">#6 Audio TTS, #7 Micro-tipping, #11 Quick Posts</td>
+        </tr>
+        <tr>
+          <td>Гипотеза</td>
+          <td class="col-a">Быстрый первый доход удерживает авторов</td>
+          <td class="col-b">Сообщество важнее контента для retention</td>
+          <td class="col-c">Мультиформат снижает churn через привычку</td>
+        </tr>
+        <tr>
+          <td>Главный риск</td>
+          <td class="col-a">Долгий путь до платящих без сети</td>
+          <td class="col-b">Сложный онбординг отпугнёт авторов</td>
+          <td class="col-c">Расфокус: слишком много форматов</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== BUILDER ========== -->
+  <div class="builder-section" id="builder-section">
+    <h2>🔧 Конфигуратор: собери свой CJM</h2>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:20px;">Выбери лучший экран из каждого варианта для идеального микса.</p>
+    <div id="builder-rows"></div>
+    <div style="text-align:center;margin-top:20px;">
+      <button class="ctrl-btn" onclick="previewCustom()" style="font-size:14px;padding:10px 24px;">👁 Предпросмотр микса</button>
+    </div>
+  </div>
+
+  <!-- ========== SCORING ========== -->
+  <div class="scoring-section" id="scoring-section">
+    <div class="score-cards" id="score-cards"></div>
+  </div>
+
+  <!-- ========== LOCK ========== -->
+  <div class="lock-section">
+    <button class="lock-btn" id="lock-btn" onclick="lockVariant()">✅ Зафиксировать winning CJM</button>
+    <div class="locked-msg" id="locked-msg">
+      <strong style="color:var(--accent-b);">CJM зафиксирован!</strong>
+      <p style="color:var(--text2);font-size:14px;margin-top:8px;" id="locked-detail"></p>
+    </div>
+  </div>
+
+  <!-- ========== MICRO-TRENDS ========== -->
+  <div class="trends-section">
+    <h2>Интегрированные микротренды 2025–2026</h2>
+    <div class="trend-grid" id="trend-grid"></div>
+  </div>
+
+  <!-- ========== SOURCES ========== -->
+  <div class="sources">
+    <h3>Первоисточники исследования</h3>
+    <div id="sources-list"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA: Generated from M2 Product Analysis + Micro-Trends Research
+// Company: Substack Clone for Russia
+// Industry: Creator Economy / Newsletter Publishing
+// ═══════════════════════════════════════════════════
+
+const VARIANTS = {
+  a: {
+    name: "Writer-First",
+    emoji: "✍️",
+    color: "var(--accent-a)",
+    colorBg: "var(--accent-a-bg)",
+    cls: "variant-a",
+    tabCls: "active-a",
+    segment: "Журналисты, блогеры, авторы",
+    hypothesis: "Быстрый первый доход удерживает авторов на платформе",
+    risk: "Долгий путь до платящих читателей без discovery-сети",
+    screens: {
+      landing: {
+        title: "Публикуй. Зарабатывай. Без посредников.",
+        sub: "Запусти свою email-рассылку за 5 минут. Бесплатно, пока не начнёшь зарабатывать. Платежи в рублях, список подписчиков — твой навсегда.",
+        cta: "Создать публикацию",
+        features: [
+          "0 ₽ до первого дохода — платишь только 10% с заработка",
+          "Рублёвые платежи: СБП, карты Mir, YooKassa",
+          "Экспорт email-базы в один клик (CSV) — никакого lock-in",
+          "Yandex SEO из коробки — статьи индексируются автоматически"
+        ],
+        cjm: { stage: "Awareness", aarrr: "Acquisition", q: "Понимает ли автор ценностное предложение за 5 сек?" }
+      },
+      onboarding: {
+        title: "Быстрый старт: 3 шага до публикации",
+        sub: "Мы верим, что первый пост важнее идеального профиля.",
+        steps: [
+          "Как вас зовут? → Имя публикации генерируется автоматически",
+          "О чём пишете? → Выбор из 20 категорий + свободное поле",
+          "Напишите первый пост → Редактор с AI-помощником: 'Предложи вступление', 'Придумай 5 заголовков'"
+        ],
+        cjm: { stage: "Activation", aarrr: "Activation", q: "Какой % авторов публикует первый пост в день регистрации?" }
+      },
+      aha: {
+        title: "💰 Первый платный подписчик!",
+        sub: "Вот он — момент, когда всё меняет смысл. Кто-то заплатил за ваши мысли.",
+        detail: "Медиана на Substack: 66 дней до первого дохода. Наша цель: сократить до 30 дней через discovery-рекомендации и реферальную программу.",
+        metrics: [
+          { k: "Дней до первого ₽", v: "Цель: <30" },
+          { k: "Конверсия free→paid", v: "Бенчмарк: 5–10%" },
+          { k: "Средний чек", v: "300–700 ₽/мес" }
+        ],
+        cjm: { stage: "Aha Moment", aarrr: "Revenue", q: "Что чувствует автор при первом платном подписчике? Как усилить эту эмоцию?" }
+      },
+      dashboard: {
+        title: "Панель автора: рост и аналитика",
+        sub: "Всё, что нужно для роста — в одном месте.",
+        features: [
+          "📊 Open rate, click rate, конверсия по каждому посту",
+          "🔗 Реферальная программа: 1 реферал → бонус-статья, 5 → месяц бесплатно, 10 → эксклюзивный доступ",
+          "🔍 Yandex SEO dashboard: позиции, трафик, ключевые слова",
+          "📧 Сегментация: отправляй разный контент free и paid подписчикам",
+          "🤖 AI-помощник: 'Подбери тему', 'Оптимизируй заголовок'"
+        ],
+        cjm: { stage: "Engagement", aarrr: "Retention", q: "Как часто автор заходит в dashboard? Что возвращает: аналитика или AI?" }
+      },
+      paywall: {
+        title: "Включи платную подписку — один переключатель",
+        sub: "Момент первого дохода — лучшее время для апгрейда.",
+        detail: "Paywall активируется СРАЗУ после Aha Moment — когда автор видит первых вовлечённых читателей. Конверсия на эмоциях 'меня читают!' выше, чем на рациональном расчёте.",
+        tiers: [
+          { name: "Бесплатный", price: "0 ₽", desc: "Все статьи, ограниченный доступ к архиву" },
+          { name: "Подписчик", price: "от 300 ₽/мес", desc: "Полный доступ + бонусные материалы" },
+          { name: "Основатель", price: "от 1000 ₽/мес", desc: "Всё + имя в 'Стене поддержки' + приватный канал" }
+        ],
+        cjm: { stage: "Monetization", aarrr: "Revenue", q: "Какая доля авторов включает paid tier в первые 7 дней после Aha?" }
+      },
+      invite: {
+        title: "Расти через рекомендации",
+        sub: "Каждый подписчик — потенциальный амбассадор.",
+        features: [
+          "📨 Реферальная ссылка с прогресс-баром: 'Пригласи 3 друзей — получи эксклюзив'",
+          "🤝 Сеть рекомендаций: 'Читатели этого автора также читают...' (25% новых подписок на Substack)",
+          "📤 One-click экспорт email-списка — доверие = рост",
+          "🔍 Yandex-индексация: каждая статья работает как landing page"
+        ],
+        cjm: { stage: "Referral", aarrr: "Referral", q: "Какой K-factor у реферальной программы? Цель: >0.3" }
+      }
+    }
+  },
+  b: {
+    name: "Knowledge Hub",
+    emoji: "🎓",
+    color: "var(--accent-b)",
+    colorBg: "var(--accent-b-bg)",
+    cls: "variant-b",
+    tabCls: "active-b",
+    segment: "Эксперты, преподаватели, консультанты",
+    hypothesis: "Сообщество и membership важнее контента для удержания",
+    risk: "Сложный онбординг отпугнёт авторов, привыкших к простоте",
+    screens: {
+      landing: {
+        title: "Стань авторитетом в своей нише",
+        sub: "Создай экспертное сообщество с платным доступом. Курсы, статьи, дискуссии — в одном месте. Membership, а не просто подписка.",
+        cta: "Создать сообщество",
+        features: [
+          "Membership Hub: перки, бейджи, уровни доступа",
+          "Bundle Pass: объедини 3–5 экспертов в одну подписку",
+          "Геймификация: стрики чтения, challenges, достижения",
+          "Опросы предпочтений: читатели голосуют за темы"
+        ],
+        cjm: { stage: "Awareness", aarrr: "Acquisition", q: "Резонирует ли 'membership' позиционирование с экспертами больше, чем 'newsletter'?" }
+      },
+      onboarding: {
+        title: "Настрой свой Knowledge Hub",
+        sub: "Расскажи о своей экспертизе — мы создадим структуру.",
+        steps: [
+          "Ваша область: → AI подберёт структуру контент-плана",
+          "Формат: курс-модули / еженедельные разборы / Q&A сессии",
+          "Первый модуль: загрузите материал или создайте с AI-помощником"
+        ],
+        cjm: { stage: "Activation", aarrr: "Activation", q: "Завершают ли эксперты онбординг из 3 шагов? Или нужно упростить до 2?" }
+      },
+      aha: {
+        title: "💬 Первая дискуссия в сообществе!",
+        sub: "Когда подписчик задаёт вопрос и получает ваш ответ — рождается сообщество.",
+        detail: "Aha Moment для Knowledge Hub — не первый платёж, а первый meaningful exchange. Дискуссия создаёт switching cost: подписчик не уйдёт из сообщества, где его знают.",
+        metrics: [
+          { k: "Дней до первой дискуссии", v: "Цель: <7" },
+          { k: "Retention с дискуссией vs без", v: "Гипотеза: +40%" },
+          { k: "Среднее количество ответов/тред", v: "Цель: >3" }
+        ],
+        cjm: { stage: "Aha Moment", aarrr: "Retention", q: "Коррелирует ли участие в дискуссии с LTV? Через какой порог?" }
+      },
+      dashboard: {
+        title: "Hub управления: контент + сообщество",
+        sub: "Аналитика, которая помогает учить лучше.",
+        features: [
+          "📊 Completion rate: какой % подписчиков дочитал модуль",
+          "🎮 Таблица лидеров: кто самый активный участник (reading streaks)",
+          "📋 Опросы предпочтений: 'О чём писать дальше?' → авто-сегментация",
+          "🎯 Weekly Challenge: автор задаёт задание → участники отвечают",
+          "📦 Bundle Pass dashboard: доход от коллективных подписок"
+        ],
+        cjm: { stage: "Engagement", aarrr: "Retention", q: "Какие gamification-механики дают наибольший retention lift?" }
+      },
+      paywall: {
+        title: "Membership с уровнями доступа",
+        sub: "Paywall после proof-of-value: читатель прошёл бесплатный модуль.",
+        detail: "Не 'заплати и читай', а 'ты уже получил пользу — хочешь больше?'. Конверсия выше, потому что ценность доказана, а не обещана.",
+        tiers: [
+          { name: "Наблюдатель", price: "0 ₽", desc: "1 бесплатный модуль + community read-only" },
+          { name: "Участник", price: "от 500 ₽/мес", desc: "Все модули + дискуссии + challenges" },
+          { name: "Менторство", price: "от 3000 ₽/мес", desc: "Всё + личный разбор + приватный чат с экспертом" }
+        ],
+        cjm: { stage: "Monetization", aarrr: "Revenue", q: "Proof-of-value paywall vs emotional paywall: какой конвертит лучше для экспертов?" }
+      },
+      invite: {
+        title: "Bundle Pass: растите вместе",
+        sub: "Объедините экспертизу — снизьте порог входа для подписчика.",
+        features: [
+          "📦 Bundle: 3–5 авторов = 1 подписка (490 ₽/мес вместо 1500 ₽ по отдельности)",
+          "🏅 Бейджи участников: 'Активный читатель', 'Знаток темы', '30-дневный стрик'",
+          "📊 Preference Poll: читатели голосуют → автор пишет → лояльность растёт",
+          "🔄 Cross-recommend: 'Если вам полезен этот эксперт, попробуйте этих'"
+        ],
+        cjm: { stage: "Referral", aarrr: "Referral", q: "Снижает ли Bundle Pass CAC для каждого участника? На сколько?" }
+      }
+    }
+  },
+  c: {
+    name: "Creator Studio",
+    emoji: "🎙️",
+    color: "var(--accent-c)",
+    colorBg: "var(--accent-c-bg)",
+    cls: "variant-c",
+    tabCls: "active-c",
+    segment: "Подкастеры, мультимедиа, видеоэссеисты",
+    hypothesis: "Мультиформат + микро-типпинг снижают churn через ежедневную привычку",
+    risk: "Расфокус — слишком много форматов размывают core value",
+    screens: {
+      landing: {
+        title: "Твоя аудитория — твоё сообщество",
+        sub: "Текст, аудио, видео — всё в одной подписке. Авто-озвучка каждой статьи. Донаты с первого дня. Quick Posts между выпусками.",
+        cta: "Создать студию",
+        features: [
+          "🎧 Авто-TTS: каждая статья → аудиоверсия за секунды",
+          "☕ 'Поддержать автора': донаты 50/150/500 ₽ на каждой странице",
+          "⚡ Quick Posts: 300 символов между большими выпусками",
+          "📱 Mobile-first: пиши и публикуй с телефона"
+        ],
+        cjm: { stage: "Awareness", aarrr: "Acquisition", q: "Привлекает ли мультиформат-позиционирование подкастеров или пугает сложностью?" }
+      },
+      onboarding: {
+        title: "Настрой свою студию",
+        sub: "Выбери форматы, которые тебе подходят. Остальное добавишь позже.",
+        steps: [
+          "Основной формат: ✍️ Текст / 🎙️ Подкаст / 🎬 Видео / Всё сразу",
+          "Импорт аудитории: RSS-фид / email-список / VK сообщество",
+          "Первая публикация: текст с авто-озвучкой или аудио-запись"
+        ],
+        cjm: { stage: "Activation", aarrr: "Activation", q: "Какой формат выбирают чаще на старте? Влияет ли мультиформат на completion rate онбординга?" }
+      },
+      aha: {
+        title: "🎧 Авто-аудио + первый донат!",
+        sub: "Ваш текст зазвучал — и кто-то отправил 150 ₽ в благодарность.",
+        detail: "Двойной Aha: (1) увидеть свой текст превращённым в качественный аудио за 10 секунд, (2) получить первый донат — zero friction, не нужна подписка. Аудио-пользователи проводят в приложении 2x больше времени (Pugpig, 2026).",
+        metrics: [
+          { k: "Время до первого доната", v: "Цель: <14 дней" },
+          { k: "Конверсия донат→подписка", v: "Гипотеза: 15–25%" },
+          { k: "Слушают аудио vs только текст", v: "Бенчмарк: 30–40%" }
+        ],
+        cjm: { stage: "Aha Moment", aarrr: "Revenue", q: "Работает ли микро-типпинг как 'entry ramp' к подписке в RU-контексте?" }
+      },
+      dashboard: {
+        title: "Студия: мульти-формат + аналитика",
+        sub: "Создавай, публикуй, зарабатывай — в разных форматах.",
+        features: [
+          "🎧 TTS Engine: генерируй аудио для каждого поста (Yandex SpeechKit)",
+          "⚡ Quick Posts: короткие обновления в ленту подписчиков между большими выпусками",
+          "☕ Dashboard донатов: кто, сколько, когда → кто готов к конверсии в paid",
+          "📈 Reading Streaks: сколько подписчиков читают 7+ дней подряд",
+          "🏪 Магазин: продавай PDF, шаблоны, разовые статьи (не только подписка)"
+        ],
+        cjm: { stage: "Engagement", aarrr: "Retention", q: "Quick Posts увеличивают DAU? Или засоряют ленту и раздражают?" }
+      },
+      paywall: {
+        title: "Подписка после привычки",
+        sub: "7-дневный reading streak → мягкий paywall.",
+        detail: "Не сразу, не после proof-of-value, а после формирования привычки. Подписчик, который читает 7 дней подряд, уже 'подсел'. Конверсия streak-based paywall выше, потому что потеря стрика = loss aversion.",
+        tiers: [
+          { name: "Читатель", price: "0 ₽", desc: "3 статьи/мес + Quick Posts + авто-аудио preview" },
+          { name: "Подписчик", price: "от 300 ₽/мес", desc: "Всё + полные аудио + архив + магазин" },
+          { name: "Patron", price: "Произвольный донат", desc: "Всё + имя в credits + ранний доступ" }
+        ],
+        cjm: { stage: "Monetization", aarrr: "Revenue", q: "Reading streak → paywall: выше ли конверсия, чем immediate paywall?" }
+      },
+      invite: {
+        title: "Расти через донаты и контент",
+        sub: "Каждый донат — это share-момент. Каждый Quick Post — это касание.",
+        features: [
+          "☕ 'Поддержать автора' → авто-share: 'Я поддержал [автора] — присоединяйся!'",
+          "⚡ Quick Posts в ленте рекомендаций → discovery для новых читателей",
+          "🏪 Магазин разовых покупок: PDF-гайд за 200 ₽ → new user → funnel в подписку",
+          "🎧 'Слушай по дороге' — audio-first discovery для Yandex Music / VK Music"
+        ],
+        cjm: { stage: "Referral", aarrr: "Referral", q: "Генерируют ли донаты viral sharing? Какой % донатеров делятся?" }
+      }
+    }
+  }
+};
+
+const CJM_META = {
+  landing:    { num: "01", label: "Landing", stage: "Awareness",    aarrr: "Acquisition" },
+  onboarding: { num: "02", label: "Onboarding", stage: "Activation",  aarrr: "Activation" },
+  aha:        { num: "03", label: "Aha Moment", stage: "Value Delivery", aarrr: "Revenue" },
+  dashboard:  { num: "04", label: "Dashboard", stage: "Engagement",  aarrr: "Retention" },
+  paywall:    { num: "05", label: "Paywall", stage: "Monetization", aarrr: "Revenue" },
+  invite:     { num: "06", label: "Invite/Growth", stage: "Referral", aarrr: "Referral" }
+};
+
+const TRENDS = [
+  { num: 1, name: "AI-персонализация доставки", desc: "Рынок AI-персонализированных рассылок: $2.53B в 2026 (CAGR 28.4%). Оптимизация времени отправки per-subscriber повышает open rate.", link: "https://www.researchandmarkets.com/reports/6177340/artificial-intelligence-generated-personalized", feature: "Per-subscriber send-time optimization" },
+  { num: 2, name: "Быстрая монетизация", desc: "Медиана time-to-first-dollar упала до 66 дней. Платные подписки на beehiiv: $19M в 2025 vs $8M в 2024 (+138%).", link: "https://www.beehiiv.com/blog/the-state-of-newsletters-2026", feature: "Onboarding funnel с milestone nudges" },
+  { num: 3, name: "Membership > Подписка", desc: "Subscription fatigue реален. Membership с перками, бейджами и identity удерживает лучше, чем 'ещё одна подписка'.", link: "https://www.readless.app/blog/subscription-fatigue-statistics-2026", feature: "Membership Hub с уровнями и перками" },
+  { num: 4, name: "Bundle Pass (коллективные подписки)", desc: "77% Gen Z предпочитают бандлы. Авторы объединяются в коллективы — общая подписка дешевле отдельных.", link: "https://bango.com/whats-in-store-for-2026-top-bundling-and-subscription-trends-to-watch/", feature: "3–8 авторов = 1 подписка" },
+  { num: 5, name: "Tiered реферальные программы", desc: "Двусторонние incentives дают конверсию 2–3x выше. Milestone-структура (1→5→10 рефералов) эффективнее flat.", link: "https://viral-loops.com/blog/referral-program-best-practices-in-2025/", feature: "Встроенный referral builder с прогресс-баром" },
+  { num: 6, name: "Audio newsletters (TTS)", desc: "Аудио-пользователи проводят в приложении 2x больше времени. 57% издателей уже предлагают TTS.", link: "https://www.pugpig.com/2026/03/04/text-to-speech-publisher-apps/", feature: "Авто-озвучка каждой статьи" },
+  { num: 7, name: "Микро-типпинг / донаты", desc: "Рынок creator tipping: $3.45B в 2026 (+18.7%). Типпинг = entry ramp к подписке. Дзен запустил донаты в Q2 2025.", link: "https://www.researchandmarkets.com/reports/6215236/creator-tipping-platforms-market-report", feature: "'Поддержать автора' button: 50/150/500 ₽" },
+  { num: 8, name: "Геймификация: стрики и challenges", desc: "Рынок геймификации: $19.4B, CAGR 25.4%. Gamified engagement +48% vs обычный. Reading streaks — наивысший retention.", link: "https://www.amplifai.com/blog/gamification-statistics", feature: "Reading Streaks + Weekly Challenges" },
+  { num: 9, name: "Встроенные сообщества", desc: "Organic reach соцсетей <2%. Owned community — единственный надёжный retention-слой. Memberships = primary revenue.", link: "https://www.framemakerzzz.com/community-led-growth-beyond-followers-2026/", feature: "Нативные комментарии + member-only чат" },
+  { num: 10, name: "AI co-pilot для авторов", desc: "28% авторов используют AI для brainstorming, 25% для drafting. Экономия 1–3 часа в неделю. 64% верят в полностью AI-рассылки к 2030.", link: "https://sellingsignals.com/newsletter-growth-trends/", feature: "AI-помощник в редакторе: заголовки, вступления, факты" },
+  { num: 11, name: "Quick Posts (short-form)", desc: "Hub-and-spoke модель: длинная рассылка + короткие посты + сообщество. Микро-нарративы 10–30 сек — доминирующий формат вовлечения.", link: "https://writebuildscale.substack.com/p/10-trends-that-will-shape-substack", feature: "300-символьные обновления между выпусками" },
+  { num: 12, name: "Магазин цифровых продуктов", desc: "Главная слабость Substack: только подписки, нет разовых продаж. beehiiv берёт 0% комиссии. Топ-авторы диверсифицируют доходы.", link: "https://solopass.co/blog/substack-alternatives-2026/", feature: "Продажа PDF, шаблонов, разовых статей" },
+  { num: 13, name: "Дзен Premium — gap analysis", desc: "Дзен: 75.3M MAU, запустил Premium и донаты в 2025. Но take rate 30%+, нет email-доставки, нет owned audience.", link: "https://www.marketscreener.com/news/vk-q2-and-h1-2025-press-release-ce7c51dbdb8df524", feature: "Undercut fee, email-first, own-your-audience" },
+  { num: 14, name: "Zero-party data опросы", desc: "Подписчики отписываются от нерелевантного, а не дорогого. Preference polls + авто-сегментация снижают churn.", link: "https://www.mailjet.com/blog/email-best-practices/email-marketing-trends-2026/", feature: "Блок 'О чём писать дальше?' в каждом выпуске" },
+  { num: 15, name: "Owned audience = moat", desc: "61% авторов используют email как core канал. FB reach <2%. Email = 100% доставка без алгоритмов.", link: "https://digitalcollective.media/p/the-creator-economy-in-2026-20-trends", feature: "One-click CSV экспорт, zero lock-in" }
+];
+
+const SOURCES = [
+  { title: "AI-Generated Personalized Newsletter Market 2026", url: "https://www.researchandmarkets.com/reports/6177340/artificial-intelligence-generated-personalized" },
+  { title: "State of Newsletters 2026 — beehiiv (28B emails)", url: "https://www.beehiiv.com/blog/the-state-of-newsletters-2026" },
+  { title: "10 Predictions Reshaping Newsletter Businesses 2026", url: "https://www.beehiiv.com/blog/10-predictions-that-will-reshape-newsletter-businesses-in-2026" },
+  { title: "Subscription Fatigue Statistics 2026 — Readless", url: "https://www.readless.app/blog/subscription-fatigue-statistics-2026" },
+  { title: "Bundling Trends 2026 — Bango", url: "https://bango.com/whats-in-store-for-2026-top-bundling-and-subscription-trends-to-watch/" },
+  { title: "Referral Program Best Practices 2025 — Viral Loops", url: "https://viral-loops.com/blog/referral-program-best-practices-in-2025/" },
+  { title: "Text-to-Speech in Publisher Apps — Pugpig 2026", url: "https://www.pugpig.com/2026/03/04/text-to-speech-publisher-apps/" },
+  { title: "Creator Tipping Platforms Market 2026", url: "https://www.researchandmarkets.com/reports/6215236/creator-tipping-platforms-market-report" },
+  { title: "Micro-Tipping Is the Fuel for Content — Olshansky", url: "https://olshansky.substack.com/p/why-micro-tipping-is-the-fuel-for" },
+  { title: "Gamification Statistics 2025 — AmplifAI", url: "https://www.amplifai.com/blog/gamification-statistics" },
+  { title: "Community-Led Growth 2026 — Framemakerzzz", url: "https://www.framemakerzzz.com/community-led-growth-beyond-followers-2026/" },
+  { title: "Newsletter Growth Trends — Selling Signals", url: "https://sellingsignals.com/newsletter-growth-trends/" },
+  { title: "10 Trends Shaping Substack 2026 — WriteBuildScale", url: "https://writebuildscale.substack.com/p/10-trends-that-will-shape-substack" },
+  { title: "Substack Alternatives 2026 — SoloPass", url: "https://solopass.co/blog/substack-alternatives-2026/" },
+  { title: "VK Q2 2025: Dzen 75.3M MAU — MarketScreener", url: "https://www.marketscreener.com/news/vk-q2-and-h1-2025-press-release-ce7c51dbdb8df524" },
+  { title: "Email Marketing Trends 2026 — Mailjet", url: "https://www.mailjet.com/blog/email-best-practices/email-marketing-trends-2026/" },
+  { title: "Creator Economy 2026: 20 Trends — Digital Collective", url: "https://digitalcollective.media/p/the-creator-economy-in-2026-20-trends" },
+  { title: "Creator Economy Trends 2026 — ThoughtLeaders", url: "https://www.thoughtleaders.io/blog/creator-economy-trends-2026" },
+  { title: "Creator Economy Statistics 2026 — Circle", url: "https://circle.so/blog/creator-economy-statistics" },
+  { title: "TTS Market 2026 — NextMSC", url: "https://www.nextmsc.com/blogs/text-to-speech-in-2026-a-new-era-of-voice-intelligence" },
+  { title: "Dzen Monetization 2025 — Traffnews", url: "https://traffnews.com/moneymaking/dzen-zarabotok/" },
+  { title: "Social Trends 2026 — Hootsuite", url: "https://www.hootsuite.com/research/social-trends" },
+  { title: "Creator Economy Trends 2026 — uScreen", url: "https://www.uscreen.tv/blog/creator-economy-trends/" },
+  { title: "Substack: $1.1B valuation — Sacra", url: "https://sacra.com/c/substack/valuation/" },
+  { title: "Substack at $45M/year — Sacra", url: "https://sacra.com/research/substack-at-45m-year/" },
+  { title: "Substack User Statistics 2026 — Backlinko", url: "https://backlinko.com/substack-users" }
+];
+
+// ═══ STATE ═══
+let currentVariant = 'a';
+let showCJM = false;
+let builderChoices = { landing:'a', onboarding:'a', aha:'a', dashboard:'a', paywall:'a', invite:'a' };
+let scores = { a:{conv:0,ret:0,vir:0}, b:{conv:0,ret:0,vir:0}, c:{conv:0,ret:0,vir:0} };
+let isLocked = false;
+
+// ═══ RENDER ═══
+function switchVariant(v) {
+  if (isLocked) return;
+  currentVariant = v;
+  document.querySelectorAll('.tab').forEach(t => t.className = 'tab');
+  document.getElementById('tab-'+v).classList.add('tab', VARIANTS[v].tabCls);
+  renderScreens();
+}
+
+function renderScreens() {
+  const v = VARIANTS[currentVariant];
+  const container = document.getElementById('screens-container');
+  container.innerHTML = '';
+  const screenKeys = ['landing','onboarding','aha','dashboard','paywall','invite'];
+  screenKeys.forEach(key => {
+    const s = v.screens[key];
+    const m = CJM_META[key];
+    const card = document.createElement('div');
+    card.className = `screen ${v.cls}`;
+    let bodyHTML = '';
+    if (key === 'landing') {
+      bodyHTML = `<h3>${s.title}</h3><p>${s.sub}</p>
+        <ul>${s.features.map(f=>'<li>'+f+'</li>').join('')}</ul>
+        <div class="mock-btn">${s.cta}</div>`;
+    } else if (key === 'onboarding') {
+      bodyHTML = `<h3>${s.title}</h3><p>${s.sub}</p>
+        <ul>${s.steps.map((st,i)=>'<li><strong>Шаг '+(i+1)+':</strong> '+st+'</li>').join('')}</ul>`;
+    } else if (key === 'aha') {
+      bodyHTML = `<h3>${s.title}</h3><p>${s.sub}</p><p style="font-size:13px;color:var(--text2);margin-top:8px;">${s.detail}</p>
+        <div style="margin-top:12px;">${s.metrics.map(m=>'<div class="metric"><span>'+m.k+'</span><span>'+m.v+'</span></div>').join('')}</div>`;
+    } else if (key === 'dashboard') {
+      bodyHTML = `<h3>${s.title}</h3><p>${s.sub}</p>
+        <ul>${s.features.map(f=>'<li>'+f+'</li>').join('')}</ul>`;
+    } else if (key === 'paywall') {
+      bodyHTML = `<h3>${s.title}</h3><p>${s.sub}</p><p style="font-size:13px;color:var(--text2);margin-top:8px;">${s.detail}</p>
+        <div style="margin-top:12px;">${s.tiers.map(t=>'<div class="metric"><span>'+t.name+' — '+t.price+'</span><span style="color:var(--text2);font-weight:400;font-size:12px;">'+t.desc+'</span></div>').join('')}</div>`;
+    } else if (key === 'invite') {
+      bodyHTML = `<h3>${s.title}</h3><p>${s.sub}</p>
+        <ul>${s.features.map(f=>'<li>'+f+'</li>').join('')}</ul>`;
+    }
+    const cjmHTML = `<div class="cjm-badge ${showCJM?'visible':''}">
+      <div class="cjm-title">📊 ${m.stage} → AARRR: ${m.aarrr}</div>
+      <div class="cjm-q">${s.cjm.q}</div>
+    </div>`;
+    card.innerHTML = `
+      <div class="screen-header">
+        <span class="screen-num">${m.num} — ${m.label}</span>
+        <span class="screen-stage">${m.stage}</span>
+      </div>
+      <div class="screen-body">${bodyHTML}${cjmHTML}</div>`;
+    container.appendChild(card);
+  });
+}
+
+function toggleCJM() {
+  showCJM = !showCJM;
+  document.getElementById('btn-cjm').classList.toggle('active', showCJM);
+  renderScreens();
+}
+
+function toggleCompare() {
+  const el = document.getElementById('compare-section');
+  el.classList.toggle('visible');
+  document.getElementById('btn-compare').classList.toggle('active', el.classList.contains('visible'));
+}
+
+function toggleBuilder() {
+  const el = document.getElementById('builder-section');
+  const show = !el.classList.contains('visible');
+  el.classList.toggle('visible', show);
+  document.getElementById('btn-builder').classList.toggle('active', show);
+  if (show) renderBuilder();
+}
+
+function renderBuilder() {
+  const rows = document.getElementById('builder-rows');
+  const screenKeys = ['landing','onboarding','aha','dashboard','paywall','invite'];
+  rows.innerHTML = screenKeys.map(key => {
+    const m = CJM_META[key];
+    return `<div class="builder-row">
+      <div class="label">${m.num} ${m.label}</div>
+      ${['a','b','c'].map(v => {
+        const sel = builderChoices[key] === v;
+        const cls = sel ? 'sel-'+v : '';
+        return `<button class="builder-opt ${cls}" onclick="setBuilder('${key}','${v}')">${VARIANTS[v].emoji} ${VARIANTS[v].name}</button>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function setBuilder(screen, variant) {
+  builderChoices[screen] = variant;
+  renderBuilder();
+}
+
+function previewCustom() {
+  const keys = Object.keys(builderChoices);
+  let msg = 'Ваш микс:\n';
+  keys.forEach(k => {
+    const v = VARIANTS[builderChoices[k]];
+    msg += `${CJM_META[k].label}: ${v.emoji} ${v.name}\n`;
+  });
+  alert(msg + '\nЗафиксируйте через кнопку ✅ ниже!');
+}
+
+function toggleScoring() {
+  const el = document.getElementById('scoring-section');
+  const show = !el.classList.contains('visible');
+  el.classList.toggle('visible', show);
+  document.getElementById('btn-scoring').classList.toggle('active', show);
+  if (show) renderScoring();
+}
+
+function renderScoring() {
+  const container = document.getElementById('score-cards');
+  container.innerHTML = ['a','b','c'].map(v => {
+    const d = VARIANTS[v];
+    const criteria = [
+      { key:'conv', label:'Конверсия в paid' },
+      { key:'ret', label:'Retention (удержание)' },
+      { key:'vir', label:'Виральность / growth' }
+    ];
+    const total = criteria.reduce((s,c) => s + scores[v][c.key], 0);
+    return `<div class="score-card">
+      <h3 style="color:${d.color}">${d.emoji} ${d.name}</h3>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px;">${d.segment}</p>
+      ${criteria.map(c => `<div class="score-row">
+        <span class="criterion">${c.label}</span>
+        <div class="score-stars">
+          ${[1,2,3,4,5].map(n => {
+            const filled = n <= scores[v][c.key];
+            return `<div class="star ${filled?'filled':''}" style="${filled?'background:'+d.color+';border-color:'+d.color:''}" onclick="setScore('${v}','${c.key}',${n})">${n}</div>`;
+          }).join('')}
+        </div>
+      </div>`).join('')}
+      <div class="score-total" style="color:${d.color}">${total}/15</div>
+    </div>`;
+  }).join('');
+}
+
+function setScore(variant, criterion, value) {
+  scores[variant][criterion] = scores[variant][criterion] === value ? 0 : value;
+  renderScoring();
+}
+
+function lockVariant() {
+  if (isLocked) return;
+  // Find best scored variant or current
+  let best = currentVariant;
+  let bestScore = 0;
+  ['a','b','c'].forEach(v => {
+    const t = scores[v].conv + scores[v].ret + scores[v].vir;
+    if (t > bestScore) { bestScore = t; best = v; }
+  });
+  if (bestScore === 0) best = currentVariant;
+
+  isLocked = true;
+  const btn = document.getElementById('lock-btn');
+  btn.className = 'lock-btn locked';
+  btn.textContent = '✅ Зафиксировано: ' + VARIANTS[best].emoji + ' ' + VARIANTS[best].name;
+
+  const msg = document.getElementById('locked-msg');
+  msg.classList.add('visible');
+  const v = VARIANTS[best];
+  document.getElementById('locked-detail').innerHTML = `
+    <strong>Winning CJM: ${v.emoji} ${v.name}</strong><br>
+    Сегмент: ${v.segment}<br>
+    Гипотеза: ${v.hypothesis}<br>
+    Aha: ${v.screens.aha.title}<br>
+    Paywall: ${v.screens.paywall.sub}<br><br>
+    <em>Этот CJM передаётся в Modules 3–6 как {CHOSEN_CJM}.</em>
+  `;
+  switchVariant(best);
+}
+
+// ═══ RENDER TRENDS ═══
+function renderTrends() {
+  const grid = document.getElementById('trend-grid');
+  grid.innerHTML = TRENDS.map(t => `<div class="trend-card">
+    <div class="trend-num">#${t.num}</div>
+    <h4>${t.name}</h4>
+    <p>${t.desc}</p>
+    <a href="${t.link}" target="_blank" rel="noopener">Источник →</a>
+    <div class="trend-feature">→ ${t.feature}</div>
+  </div>`).join('');
+}
+
+// ═══ RENDER SOURCES ═══
+function renderSources() {
+  const list = document.getElementById('sources-list');
+  list.innerHTML = SOURCES.map(s => `<a href="${s.url}" target="_blank" rel="noopener">${s.title}</a>`).join('');
+}
+
+// ═══ INIT ═══
+renderScreens();
+renderTrends();
+renderSources();
+</script>
+</body>
+</html>
