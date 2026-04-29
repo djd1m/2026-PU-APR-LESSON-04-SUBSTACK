@@ -35,20 +35,24 @@ export class SubscriptionsService {
    * Create a free subscription for a subscriber to a publication.
    * Throws ConflictException if an active or grace-period subscription already exists.
    */
-  async subscribeFree(subscriberId: string, publicationId: string) {
+  async subscribeFree(subscriberId: string, publicationIdOrSlug: string) {
+    // Support both UUID and slug lookup
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(publicationIdOrSlug);
     const publication = await this.prisma.publication.findUnique({
-      where: { id: publicationId },
+      where: isUuid ? { id: publicationIdOrSlug } : { slug: publicationIdOrSlug },
     });
 
     if (!publication) {
-      throw new NotFoundException(`Publication "${publicationId}" not found`);
+      throw new NotFoundException(`Publication "${publicationIdOrSlug}" not found`);
     }
+
+    const pubId = publication.id;
 
     // Check for existing active or grace_period subscription (any type)
     const existing = await this.prisma.subscription.findFirst({
       where: {
         subscriber_id: subscriberId,
-        publication_id: publicationId,
+        publication_id: pubId,
         status: { in: [SubscriptionStatus.active, SubscriptionStatus.grace_period] },
       },
     });
@@ -62,7 +66,7 @@ export class SubscriptionsService {
     return this.prisma.subscription.create({
       data: {
         subscriber_id: subscriberId,
-        publication_id: publicationId,
+        publication_id: pubId,
         type: SubscriptionType.free,
         status: SubscriptionStatus.active,
       },
@@ -80,16 +84,19 @@ export class SubscriptionsService {
    */
   async subscribePaid(
     subscriberId: string,
-    publicationId: string,
+    publicationIdOrSlug: string,
     processor: PaymentProcessor,
   ): Promise<{ paymentUrl: string }> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(publicationIdOrSlug);
     const publication = await this.prisma.publication.findUnique({
-      where: { id: publicationId },
+      where: isUuid ? { id: publicationIdOrSlug } : { slug: publicationIdOrSlug },
     });
 
     if (!publication) {
-      throw new NotFoundException(`Publication "${publicationId}" not found`);
+      throw new NotFoundException(`Publication "${publicationIdOrSlug}" not found`);
     }
+
+    const pubId = publication.id;
 
     if (!publication.paid_enabled) {
       throw new ConflictException(
@@ -101,7 +108,7 @@ export class SubscriptionsService {
     const existing = await this.prisma.subscription.findFirst({
       where: {
         subscriber_id: subscriberId,
-        publication_id: publicationId,
+        publication_id: pubId,
         status: { in: [SubscriptionStatus.active, SubscriptionStatus.grace_period] },
         type: SubscriptionType.paid,
       },
@@ -117,7 +124,7 @@ export class SubscriptionsService {
     const subscription = await this.prisma.subscription.create({
       data: {
         subscriber_id: subscriberId,
-        publication_id: publicationId,
+        publication_id: pubId,
         type: SubscriptionType.paid,
         status: SubscriptionStatus.pending,
       },
