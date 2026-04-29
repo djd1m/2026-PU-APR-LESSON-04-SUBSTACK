@@ -243,6 +243,17 @@ export class ArticlesService {
           slug: articleSlug,
         },
       },
+      include: {
+        publication: {
+          select: {
+            name: true,
+            slug: true,
+            description: true,
+            paid_price_monthly: true,
+            author: { select: { name: true } },
+          },
+        },
+      },
     });
 
     if (!article || article.status !== ArticleStatus.published) {
