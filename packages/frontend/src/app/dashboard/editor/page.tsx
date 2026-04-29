@@ -111,19 +111,27 @@ export default function EditorPage() {
   const handleSaveDraft = async () => {
     if (!selectedPubId) {
       setSaveStatus('error')
-      setErrorMessage('Сначала создайте публикацию')
+      setErrorMessage('Сначала создайте публикацию в Настройках')
+      return
+    }
+    const payload = getPayload('draft')
+    if (!payload.content_markdown || payload.content_markdown === '<p></p>') {
+      setSaveStatus('error')
+      setErrorMessage('Напишите что-нибудь перед сохранением')
       return
     }
     setSaving(true)
     setSaveStatus('idle')
     setErrorMessage('')
     try {
-      await api.post(`/publications/${selectedPubId}/articles`, getPayload('draft'))
+      await api.post(`/publications/${selectedPubId}/articles`, payload)
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (err) {
       setSaveStatus('error')
-      setErrorMessage(err instanceof Error ? err.message : 'Ошибка сохранения')
+      const msg = err instanceof Error ? err.message : 'Неизвестная ошибка'
+      setErrorMessage(`Ошибка: ${msg}`)
+      console.error('[Editor] Save failed:', { selectedPubId, payload, error: err })
     } finally {
       setSaving(false)
     }

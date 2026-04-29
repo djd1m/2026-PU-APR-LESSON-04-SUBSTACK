@@ -42,7 +42,7 @@ export default (): AppConfig => ({
   jwtSecret: process.env.JWT_SECRET ?? 'change-me-in-production',
   jwtRefreshSecret:
     process.env.JWT_REFRESH_SECRET ?? 'change-refresh-me-in-production',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '30d',
 
   database: {

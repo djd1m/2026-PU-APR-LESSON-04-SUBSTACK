@@ -16,8 +16,26 @@ function getAuthToken(): string | null {
   return null
 }
 
+function setTokenCookie(token: string): void {
+  document.cookie = `auth_token=${encodeURIComponent(token)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+}
+
+function updateStoredToken(newToken: string): void {
+  try {
+    const stored = localStorage.getItem('auth-storage')
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (parsed?.state) {
+        parsed.state.token = newToken
+        localStorage.setItem('auth-storage', JSON.stringify(parsed))
+      }
+    }
+  } catch {}
+}
+
 interface FetchOptions extends RequestInit {
   skipAuth?: boolean
+  _isRetry?: boolean
 }
 
 export class ApiError extends Error {
@@ -31,11 +49,31 @@ export class ApiError extends Error {
   }
 }
 
+async function tryRefreshToken(): Promise<string | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    })
+    if (!response.ok) return null
+    const data = await response.json() as { accessToken?: string }
+    if (data.accessToken) {
+      setTokenCookie(data.accessToken)
+      updateStoredToken(data.accessToken)
+      return data.accessToken
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 export async function fetchAPI<T>(
   path: string,
   options: FetchOptions = {}
 ): Promise<T> {
-  const { skipAuth = false, headers: customHeaders, ...rest } = options
+  const { skipAuth = false, _isRetry = false, headers: customHeaders, ...rest } = options
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -53,6 +91,21 @@ export async function fetchAPI<T>(
     headers,
     ...rest,
   })
+
+  // Auto-refresh on 401 (once)
+  if (response.status === 401 && !skipAuth && !_isRetry) {
+    const newToken = await tryRefreshToken()
+    if (newToken) {
+      // Retry with new token
+      return fetchAPI<T>(path, { ...options, _isRetry: true })
+    }
+    // Refresh failed — clear auth state and redirect to login
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth-storage')
+      document.cookie = 'auth_token=; path=/; max-age=0'
+      window.location.href = '/auth/login'
+    }
+  }
 
   if (!response.ok) {
     let errorData: unknown
