@@ -5,6 +5,7 @@ import { Queue } from 'bull';
 import { Resend } from 'resend';
 import { ArticleVisibility, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { articleEmailHtml } from './templates/article';
 
 export interface SendEmailJobData {
@@ -18,21 +19,81 @@ export interface SendEmailJobData {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly resend: Resend;
-  private readonly fromAddress: string;
+  private resend: Resend | null = null;
   private readonly baseUrl: string;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly settingsService: SettingsService,
     @InjectQueue('email-send') private readonly emailQueue: Queue<SendEmailJobData>,
   ) {
-    const apiKey = this.config.get<string>('resend.apiKey') ?? '';
+    this.baseUrl = this.config.get<string>('app.baseUrl') ?? 'http://localhost:3010';
+  }
+
+  /**
+   * Get or create Resend client. Reads API key from DB first, then env.
+   */
+  private async getResendClient(): Promise<Resend | null> {
+    const apiKey = await this.settingsService.getResendApiKey();
+    if (!apiKey) {
+      this.logger.warn('Resend API key not configured — emails will not be sent');
+      return null;
+    }
+    // Create fresh client if key might have changed
     this.resend = new Resend(apiKey);
-    const fromName = this.config.get<string>('resend.fromName') ?? 'SubStack RU';
-    const fromEmail = this.config.get<string>('resend.fromEmail') ?? 'noreply@substackru.com';
-    this.fromAddress = `${fromName} <${fromEmail}>`;
-    this.baseUrl = this.config.get<string>('app.baseUrl') ?? 'http://localhost:3000';
+    return this.resend;
+  }
+
+  private async getFromAddress(): Promise<string> {
+    const fromEmail = await this.settingsService.getEmailFrom();
+    return `SubStack RU <${fromEmail}>`;
+  }
+
+  // ─── Welcome Email ────────────────────────────────────────────────────────
+
+  /**
+   * Send welcome email when user subscribes to a publication.
+   */
+  async sendWelcomeEmail(
+    subscriberEmail: string,
+    publicationName: string,
+    publicationSlug: string,
+  ): Promise<void> {
+    const client = await this.getResendClient();
+    if (!client) {
+      this.logger.log(`[DEV] Welcome email for ${subscriberEmail} to "${publicationName}" — Resend not configured`);
+      return;
+    }
+
+    const fromAddress = await this.getFromAddress();
+    const pubUrl = `${this.baseUrl}/${publicationSlug}`;
+
+    try {
+      await client.emails.send({
+        from: fromAddress,
+        to: subscriberEmail,
+        subject: `Вы подписались на «${publicationName}»`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <h1 style="font-size: 24px; color: #1a1a2e;">Добро пожаловать!</h1>
+            <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+              Вы успешно подписались на <strong>${publicationName}</strong>.
+              Теперь вы будете получать новые статьи автора прямо на email.
+            </p>
+            <a href="${pubUrl}" style="display: inline-block; padding: 12px 24px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              Перейти к публикации
+            </a>
+            <p style="font-size: 13px; color: #9494b0; margin-top: 32px;">
+              Если вы не подписывались — просто проигнорируйте это письмо.
+            </p>
+          </div>
+        `,
+      });
+      this.logger.log(`Welcome email sent to ${subscriberEmail} for "${publicationName}"`);
+    } catch (err) {
+      this.logger.error(`Failed to send welcome email to ${subscriberEmail}`, err);
+    }
   }
 
   // ─── Public API ───────────────────────────────────────────────────────────────
@@ -141,8 +202,11 @@ export class EmailService {
    */
   async sendEmail(to: string, subject: string, html: string): Promise<string | null> {
     try {
-      const result = await this.resend.emails.send({
-        from: this.fromAddress,
+      const client = await this.getResendClient();
+      if (!client) return null;
+      const fromAddress = await this.getFromAddress();
+      const result = await client.emails.send({
+        from: fromAddress,
         to,
         subject,
         html,

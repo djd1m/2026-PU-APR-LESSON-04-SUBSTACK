@@ -19,6 +19,7 @@ import { RecommendationsModule } from './modules/recommendations/recommendations
 import { ReferralsModule } from './modules/referrals/referrals.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { TipsModule } from './modules/tips/tips.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { TipsModule } from './modules/tips/tips.module';
     ReferralsModule,
     TipsModule,
     AdminModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}

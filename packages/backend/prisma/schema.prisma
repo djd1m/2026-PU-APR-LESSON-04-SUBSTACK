@@ -306,3 +306,13 @@ model Tip {
   @@map("tips")
 }
 
+
+// ─── Platform Settings ──────────────────────────────────────────────────────
+
+model PlatformSetting {
+  key        String   @id
+  value      String
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@map("platform_settings")
+}

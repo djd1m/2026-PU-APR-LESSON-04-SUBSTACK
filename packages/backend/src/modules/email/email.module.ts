@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { SettingsModule } from '../settings/settings.module';
 import { EmailService } from './email.service';
 import { EmailProcessor } from './email.processor';
 import { EmailController } from './email.controller';
@@ -20,6 +21,7 @@ import { EmailController } from './email.controller';
 @Module({
   imports: [
     PrismaModule,
+    SettingsModule,
     BullModule.registerQueue({
       name: 'email-send',
       defaultJobOptions: {

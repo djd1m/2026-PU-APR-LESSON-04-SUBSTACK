@@ -13,6 +13,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
+import { EmailService } from '../email/email.service';
 
 // Grace period duration in days after a failed payment
 const GRACE_PERIOD_DAYS = 3;
@@ -27,6 +28,7 @@ export class SubscriptionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly paymentsService: PaymentsService,
+    private readonly emailService: EmailService,
   ) {}
 
   // ─── Free Subscriptions ────────────────────────────────────────────────────
@@ -63,7 +65,7 @@ export class SubscriptionsService {
       );
     }
 
-    return this.prisma.subscription.create({
+    const subscription = await this.prisma.subscription.create({
       data: {
         subscriber_id: subscriberId,
         publication_id: pubId,
@@ -72,6 +74,19 @@ export class SubscriptionsService {
       },
       include: { publication: true },
     });
+
+    // Send welcome email (fire-and-forget)
+    const subscriber = await this.prisma.user.findUnique({
+      where: { id: subscriberId },
+      select: { email: true },
+    });
+    if (subscriber) {
+      this.emailService
+        .sendWelcomeEmail(subscriber.email, publication.name, publication.slug)
+        .catch((err) => this.logger.error('Failed to send welcome email', err));
+    }
+
+    return subscription;
   }
 
   // ─── Paid Subscriptions ────────────────────────────────────────────────────

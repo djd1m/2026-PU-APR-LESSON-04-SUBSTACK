@@ -4,6 +4,7 @@ import { ExportController } from './export.controller';
 import { SubscriptionsController } from './subscriptions.controller';
 import { SubscriptionsService } from './subscriptions.service';
 import { PaymentsModule } from '../payments/payments.module';
+import { EmailModule } from '../email/email.module';
 
 /**
  * SubscriptionsModule — manages subscription lifecycle and cron-based expiry.
@@ -23,6 +24,7 @@ import { PaymentsModule } from '../payments/payments.module';
   imports: [
     ScheduleModule.forRoot(),
     forwardRef(() => PaymentsModule),
+    EmailModule,
   ],
   controllers: [ExportController, SubscriptionsController],
   providers: [SubscriptionsService],

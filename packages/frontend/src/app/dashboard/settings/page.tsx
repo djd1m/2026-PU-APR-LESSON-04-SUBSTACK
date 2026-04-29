@@ -34,6 +34,30 @@ export default function SettingsPage() {
   const [bankSuccess, setBankSuccess] = useState('')
   const [bankError, setBankError] = useState('')
 
+  // Email (Resend) state
+  const [resendKey, setResendKey] = useState('')
+  const [emailFrom, setEmailFrom] = useState('')
+  const [emailConfigured, setEmailConfigured] = useState(false)
+  const [emailKeyPreview, setEmailKeyPreview] = useState('')
+  const [emailSaving, setEmailSaving] = useState(false)
+  const [emailSuccess, setEmailSuccess] = useState('')
+  const [emailError, setEmailError] = useState('')
+
+  // Load email settings
+  useEffect(() => {
+    async function loadEmailSettings() {
+      try {
+        const data = await api.get<{ configured: boolean; from: string; apiKeyPreview: string | null }>('/settings/email/test')
+        setEmailConfigured(data.configured)
+        setEmailFrom(data.from)
+        setEmailKeyPreview(data.apiKeyPreview ?? '')
+      } catch {
+        // settings endpoint may not exist yet
+      }
+    }
+    loadEmailSettings()
+  }, [])
+
   useEffect(() => {
     async function load() {
       try {
@@ -90,6 +114,30 @@ export default function SettingsPage() {
       setBankError(err instanceof Error ? err.message : 'Ошибка сохранения')
     } finally {
       setBankSaving(false)
+    }
+  }
+
+  const handleSaveEmailSettings = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEmailSaving(true)
+    setEmailError('')
+    setEmailSuccess('')
+    try {
+      await api.patch('/settings', {
+        ...(resendKey.trim() ? { resend_api_key: resendKey.trim() } : {}),
+        ...(emailFrom.trim() ? { email_from: emailFrom.trim() } : {}),
+      })
+      setEmailSuccess('Email-настройки сохранены')
+      setResendKey('')
+      // Reload status
+      const data = await api.get<{ configured: boolean; from: string; apiKeyPreview: string | null }>('/settings/email/test')
+      setEmailConfigured(data.configured)
+      setEmailKeyPreview(data.apiKeyPreview ?? '')
+      setEmailFrom(data.from)
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'Ошибка сохранения')
+    } finally {
+      setEmailSaving(false)
     }
   }
 
@@ -212,6 +260,53 @@ export default function SettingsPage() {
 
           <Button type="submit" variant="primary" isLoading={bankSaving} disabled={!bankName.trim() || !bik.trim() || !accountNumber.trim()}>
             Сохранить реквизиты
+          </Button>
+        </form>
+      </div>
+
+      {/* ─── Email Settings (Resend) ─── */}
+      <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-gray-200">Email-рассылка (Resend)</h2>
+          {emailConfigured ? (
+            <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">Настроено</span>
+          ) : (
+            <span className="text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400">Не настроено</span>
+          )}
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Для отправки email подписчикам нужен API ключ от{' '}
+          <a href="https://resend.com" target="_blank" rel="noopener" className="text-indigo-400 hover:text-indigo-300">resend.com</a>.
+          Зарегистрируйтесь, подтвердите домен и скопируйте ключ.
+        </p>
+
+        {emailKeyPreview && (
+          <p className="text-sm text-gray-400 mb-4">
+            Текущий ключ: <code className="bg-gray-800 px-2 py-0.5 rounded text-emerald-400">{emailKeyPreview}</code>
+          </p>
+        )}
+
+        <form onSubmit={handleSaveEmailSettings} className="space-y-4">
+          <Input
+            label="Resend API Key"
+            placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            value={resendKey}
+            onChange={(e) => setResendKey(e.target.value)}
+            hint="Начинается с re_. Оставьте пустым, чтобы не менять"
+          />
+          <Input
+            label="Email отправителя"
+            placeholder="noreply@yourdomain.com"
+            value={emailFrom}
+            onChange={(e) => setEmailFrom(e.target.value)}
+            hint="Домен должен быть подтверждён в Resend"
+          />
+
+          {emailError && <p className="text-sm text-red-400">{emailError}</p>}
+          {emailSuccess && <p className="text-sm text-emerald-400">{emailSuccess}</p>}
+
+          <Button type="submit" variant="primary" isLoading={emailSaving}>
+            Сохранить email-настройки
           </Button>
         </form>
       </div>
