@@ -80,7 +80,7 @@ export class ArticlesController {
   @Public()
   @Get('api/publications/:slug/articles')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'List published articles for a publication (paginated)' })
+  @ApiOperation({ summary: 'List articles for a publication (paginated). Owners see drafts too.' })
   @ApiParam({ name: 'slug', description: 'Publication slug' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
@@ -90,10 +90,16 @@ export class ArticlesController {
     @Param('slug') slug: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
+    @Req() req: AuthRequest,
   ) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 20);
-    return this.articlesService.findByPublicationSlug(slug, pageNum, limitNum, false);
+    // If user is authenticated, check if they own this publication
+    const userId = req.user?.id;
+    const isOwner = userId
+      ? await this.articlesService.isPublicationOwner(slug, userId)
+      : false;
+    return this.articlesService.findByPublicationSlug(slug, pageNum, limitNum, isOwner);
   }
 
   // ── GET /api/publications/:slug/articles/:articleSlug ────────────────────────

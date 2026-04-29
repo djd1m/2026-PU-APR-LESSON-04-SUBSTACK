@@ -43,6 +43,17 @@ export class ArticlesService {
   }
 
   /**
+   * Checks if a user owns a publication by slug.
+   */
+  async isPublicationOwner(slug: string, userId: string): Promise<boolean> {
+    const pub = await this.prisma.publication.findUnique({
+      where: { slug },
+      select: { author_id: true },
+    });
+    return pub?.author_id === userId;
+  }
+
+  /**
    * Fetches the publication and verifies that authorId owns it.
    * Throws NotFoundException if publication does not exist,
    * ForbiddenException if the caller is not the owner.
