@@ -70,22 +70,13 @@ export default function EditorPage() {
   useEffect(() => {
     async function loadPublications() {
       try {
-        const pubs = await api.get<Publication[]>('/author/publications')
+        const pubs = await api.get<Publication[]>('/publications/my')
         setPublications(pubs)
         if (pubs.length > 0) {
           setSelectedPubId(pubs[0].id)
         }
       } catch {
-        // If endpoint doesn't exist yet, try alternative
-        try {
-          const pubs = await api.get<Publication[]>('/publications/my')
-          setPublications(pubs)
-          if (pubs.length > 0) {
-            setSelectedPubId(pubs[0].id)
-          }
-        } catch {
-          setPublications([])
-        }
+        setPublications([])
       } finally {
         setLoadingPubs(false)
       }

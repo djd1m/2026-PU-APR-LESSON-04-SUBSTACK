@@ -1,9 +1,19 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api'
 
 function getAuthToken(): string | null {
-  if (typeof document === 'undefined') return null
+  if (typeof window === 'undefined') return null
+  // Try cookie first
   const match = document.cookie.match(/(?:^|;\s*)auth_token=([^;]*)/)
-  return match ? decodeURIComponent(match[1]) : null
+  if (match) return decodeURIComponent(match[1])
+  // Fallback: read from Zustand persisted localStorage
+  try {
+    const stored = localStorage.getItem('auth-storage')
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return parsed?.state?.token ?? null
+    }
+  } catch {}
+  return null
 }
 
 interface FetchOptions extends RequestInit {
