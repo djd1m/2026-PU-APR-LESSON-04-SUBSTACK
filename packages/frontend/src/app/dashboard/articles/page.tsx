@@ -9,11 +9,14 @@ import { clsx } from 'clsx'
 interface Article {
   id: string
   title: string
+  slug: string
   excerpt: string
   status: 'draft' | 'published' | 'scheduled'
   visibility: 'free' | 'paid'
   published_at: string | null
   created_at: string
+  publicationSlug?: string
+  publicationName?: string
 }
 
 interface Publication {
@@ -55,30 +58,30 @@ export default function ArticlesPage() {
   useEffect(() => {
     async function loadArticles() {
       try {
-        // Get author's publications first
         const pubs = await api.get<Publication[]>('/publications/my')
         if (pubs.length === 0) {
           setArticles([])
           return
         }
 
-        // Load articles from all publications
         const allArticles: Article[] = []
         for (const pub of pubs) {
           try {
-            // Use slug to get articles (the endpoint expects slug, not id)
             const resp = await api.get<ArticlesResponse | Article[]>(
               `/publications/${pub.slug}/articles?limit=100`
             )
-            // API may return {items, total} or just array
             const items = Array.isArray(resp) ? resp : (resp.items ?? [])
+            // Enrich each article with publication slug/name
+            for (const item of items) {
+              item.publicationSlug = pub.slug
+              item.publicationName = pub.name
+            }
             allArticles.push(...items)
           } catch {
-            // Skip publications with errors
+            // skip
           }
         }
 
-        // Sort by created_at descending
         allArticles.sort((a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
@@ -117,7 +120,7 @@ export default function ArticlesPage() {
           <h1 className="text-2xl font-bold text-gray-100">Статьи</h1>
           <p className="text-sm text-gray-500 mt-1">
             {articles.length > 0
-              ? `Всего: ${articles.length} (${counts.published} опубликовано, ${counts.draft} черновиков)`
+              ? `Всего: ${articles.length} (${counts.published} опубл., ${counts.draft} черн.)`
               : 'Управляйте своими публикациями'}
           </p>
         </div>
@@ -169,63 +172,74 @@ export default function ArticlesPage() {
             </Link>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Статья</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Статус</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Дата</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {filtered.map((article) => (
-                <tr key={article.id} className="hover:bg-gray-800/50 transition-colors">
-                  <td className="px-5 py-4">
-                    <p className="text-sm font-medium text-gray-200 line-clamp-1">
-                      {article.title}
-                    </p>
-                    {article.excerpt && (
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                        {article.excerpt}
+          <div className="divide-y divide-gray-800">
+            {filtered.map((article) => {
+              const publicUrl = article.publicationSlug && article.slug
+                ? `/${article.publicationSlug}/${article.slug}`
+                : null
+
+              return (
+                <div key={article.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-800/50 transition-colors">
+                  {/* Title + excerpt */}
+                  <div className="flex-1 min-w-0">
+                    {article.status === 'published' && publicUrl ? (
+                      <a href={publicUrl} className="text-sm font-medium text-gray-200 hover:text-indigo-400 transition-colors line-clamp-1">
+                        {article.title}
+                      </a>
+                    ) : (
+                      <p className="text-sm font-medium text-gray-200 line-clamp-1">
+                        {article.title}
                       </p>
                     )}
-                    <div className="flex items-center gap-2 mt-2 sm:hidden">
-                      <span className={clsx('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', STATUS_STYLES[article.status] ?? STATUS_STYLES.draft)}>
-                        {STATUS_LABELS[article.status] ?? article.status}
-                      </span>
-                      <span className={clsx('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', article.visibility === 'paid' ? 'bg-amber-500/10 text-amber-400' : 'bg-gray-700 text-gray-400')}>
-                        {article.visibility === 'paid' ? 'Платная' : 'Бесплатная'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 hidden sm:table-cell">
-                    <div className="flex flex-col gap-1.5">
-                      <span className={clsx('inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium', STATUS_STYLES[article.status] ?? STATUS_STYLES.draft)}>
-                        {STATUS_LABELS[article.status] ?? article.status}
-                      </span>
-                      <span className={clsx('inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium', article.visibility === 'paid' ? 'bg-amber-500/10 text-amber-400' : 'bg-gray-700 text-gray-400')}>
-                        {article.visibility === 'paid' ? 'Платная' : 'Бесплатная'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 hidden md:table-cell">
-                    <span className="text-xs text-gray-500">
-                      {formatDate(article.published_at ?? article.created_at)}
+                    {article.excerpt && (
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{article.excerpt}</p>
+                    )}
+                    {article.publicationName && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        в <a href={`/${article.publicationSlug}`} className="text-gray-500 hover:text-gray-400">{article.publicationName}</a>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Status badges */}
+                  <div className="hidden sm:flex flex-col gap-1.5 shrink-0">
+                    <span className={clsx('inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium', STATUS_STYLES[article.status] ?? STATUS_STYLES.draft)}>
+                      {STATUS_LABELS[article.status] ?? article.status}
                     </span>
-                  </td>
-                  <td className="px-4 py-4">
+                    <span className={clsx('inline-flex w-fit px-2 py-0.5 rounded-full text-xs font-medium', article.visibility === 'paid' ? 'bg-amber-500/10 text-amber-400' : 'bg-gray-700 text-gray-400')}>
+                      {article.visibility === 'paid' ? 'Платная' : 'Бесплатная'}
+                    </span>
+                  </div>
+
+                  {/* Date */}
+                  <span className="hidden md:block text-xs text-gray-500 shrink-0 w-24">
+                    {formatDate(article.published_at ?? article.created_at)}
+                  </span>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 shrink-0">
+                    {article.status === 'published' && publicUrl && (
+                      <a
+                        href={publicUrl}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+                        title="Открыть опубликованную статью"
+                      >
+                        Открыть
+                      </a>
+                    )}
                     <Link
                       href={`/dashboard/editor?id=${article.id}`}
                       className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
                     >
                       Редактировать
                     </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>
