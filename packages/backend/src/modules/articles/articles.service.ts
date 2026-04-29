@@ -99,6 +99,26 @@ export class ArticlesService {
     return article;
   }
 
+  /**
+   * Find article by ID — for editing. Verifies ownership.
+   */
+  async findById(articleId: string, authorId: string) {
+    const article = await this.prisma.article.findUnique({
+      where: { id: articleId },
+      include: { publication: { select: { author_id: true } } },
+    });
+
+    if (!article) {
+      throw new NotFoundException(`Article ${articleId} not found`);
+    }
+
+    if (article.publication.author_id !== authorId) {
+      throw new ForbiddenException('You are not the owner of this article');
+    }
+
+    return article;
+  }
+
   // ─── CRUD ─────────────────────────────────────────────────────────────────────
 
   /**

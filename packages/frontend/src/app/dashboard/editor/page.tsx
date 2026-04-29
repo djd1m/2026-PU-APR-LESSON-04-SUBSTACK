@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
+import { useSearchParams } from 'next/navigation'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,16 @@ interface ArticlePayload {
   content_markdown: string
   visibility: ArticleVisibility
   status: 'draft' | 'published' | 'scheduled'
+}
+
+interface ExistingArticle {
+  id: string
+  title: string
+  content_html: string
+  content_markdown: string
+  visibility: ArticleVisibility
+  status: string
+  publication_id: string
 }
 
 function ToolbarButton({
@@ -54,6 +65,9 @@ function ToolbarButton({
 }
 
 export default function EditorPage() {
+  const searchParams = useSearchParams()
+  const editId = searchParams.get('id')
+
   const [title, setTitle] = useState('')
   const [visibility, setVisibility] = useState<ArticleVisibility>('free')
   const [saving, setSaving] = useState(false)
@@ -65,6 +79,8 @@ export default function EditorPage() {
   const [publications, setPublications] = useState<Publication[]>([])
   const [selectedPubId, setSelectedPubId] = useState<string>('')
   const [loadingPubs, setLoadingPubs] = useState(true)
+  const [articleId, setArticleId] = useState<string | null>(editId)
+  const [editorReady, setEditorReady] = useState(false)
 
   // Load author's publications on mount
   useEffect(() => {
@@ -96,7 +112,32 @@ export default function EditorPage() {
         class: 'tiptap focus:outline-none',
       },
     },
+    onCreate: () => setEditorReady(true),
   })
+
+  // Load existing article if editing
+  useEffect(() => {
+    if (!editId || !editor || !editorReady) return
+    async function loadArticle() {
+      try {
+        const article = await api.get<ExistingArticle>(`/articles/${editId}`)
+        setTitle(article.title)
+        setVisibility(article.visibility)
+        setArticleId(article.id)
+        if (article.publication_id) {
+          setSelectedPubId(article.publication_id)
+        }
+        // Set editor content — use HTML (TipTap works with HTML)
+        const content = article.content_html || article.content_markdown || ''
+        editor.commands.setContent(content)
+      } catch (err) {
+        console.error('[Editor] Failed to load article:', err)
+        setErrorMessage('Не удалось загрузить статью')
+        setSaveStatus('error')
+      }
+    }
+    loadArticle()
+  }, [editId, editor, editorReady])
 
   const getPayload = useCallback(
     (status: 'draft' | 'published' | 'scheduled'): ArticlePayload => ({
@@ -124,14 +165,23 @@ export default function EditorPage() {
     setSaveStatus('idle')
     setErrorMessage('')
     try {
-      await api.post(`/publications/${selectedPubId}/articles`, payload)
+      if (articleId) {
+        // Update existing article
+        await api.patch(`/articles/${articleId}`, payload)
+      } else {
+        // Create new article
+        const created = await api.post<{ id: string }>(`/publications/${selectedPubId}/articles`, payload)
+        setArticleId(created.id)
+        // Update URL without reload
+        window.history.replaceState(null, '', `/dashboard/editor?id=${created.id}`)
+      }
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (err) {
       setSaveStatus('error')
       const msg = err instanceof Error ? err.message : 'Неизвестная ошибка'
       setErrorMessage(`Ошибка: ${msg}`)
-      console.error('[Editor] Save failed:', { selectedPubId, payload, error: err })
+      console.error('[Editor] Save failed:', { articleId, selectedPubId, payload, error: err })
     } finally {
       setSaving(false)
     }

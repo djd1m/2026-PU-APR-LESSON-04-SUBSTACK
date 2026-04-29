@@ -119,6 +119,22 @@ export class ArticlesController {
     return this.articlesService.findBySlug(slug, articleSlug);
   }
 
+  // ── GET /api/articles/:id ────────────────────────────────────────────────────
+
+  @Get('api/articles/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get article by ID (owner only, includes all fields)' })
+  @ApiParam({ name: 'id', description: 'Article UUID' })
+  @ApiResponse({ status: 200, description: 'Full article data' })
+  @ApiResponse({ status: 404, description: 'Article not found' })
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthRequest,
+  ) {
+    return this.articlesService.findById(id, req.user.id);
+  }
+
   // ── PATCH /api/articles/:id ──────────────────────────────────────────────────
 
   @Patch('api/articles/:id')
